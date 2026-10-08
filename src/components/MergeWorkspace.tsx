@@ -11,6 +11,7 @@ import {
   Edit3,
   Check,
 } from 'lucide-react';
+import { useI18n } from '../i18n/translations';
 import {
   ConflictResolutionChoice,
   MergeValidationReport,
@@ -46,6 +47,7 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
   onPreviewMergeReport,
   onResetFiles,
 }) => {
+  const { t } = useI18n();
   const [activeConflictIndex, setActiveConflictIndex] = useState<number>(0);
   const [customInputMode, setCustomInputMode] = useState<boolean>(false);
   const [customDraftValue, setCustomDraftValue] = useState<string>('');
@@ -109,220 +111,221 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
     if (!report.isValid) return;
     onExportMergedFmb();
     setExportBanner(
-      `Exported validated merged module "${result.outputFileName}" (${result.summary.autoMergedTotal} auto-merged, ${result.summary.resolvedConflicts} conflicts resolved).`
+      `${result.outputFileName} (${result.summary.autoMergedTotal} auto, ${result.summary.resolvedConflicts} resolved)`
     );
   };
 
+  const btnClass = isDark
+    ? 'border-[#34363d] bg-[#25272c] text-zinc-200 hover:bg-[#2f3138]'
+    : 'border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100';
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      {/* Top Merge Status Header */}
+      {/* Top 3-Way Path Bar & Merge Analysis Strip */}
       <div
-        className={`px-6 py-4 border-b ${
-          isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'
+        className={`px-4 py-2 border-b ${
+          isDark ? 'border-[#2b2d32] bg-[#1e1f23]' : 'border-zinc-300 bg-zinc-100'
         }`}
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="text-xs text-slate-500 font-medium mb-0.5">
-              3-Way Merge Analysis · Module {result.oursModel.metadata.moduleName}
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-              <span className="text-slate-400">BASE:</span>
-              <span className="font-semibold">{result.baseModel.metadata.fileName}</span>
-              <span className="text-slate-500">·</span>
-              <span className="text-blue-400">OURS:</span>
-              <span className="font-semibold">{result.oursModel.metadata.fileName}</span>
-              <span className="text-slate-500">·</span>
-              <span className="text-purple-400">THEIRS:</span>
-              <span className="font-semibold">{result.theirsModel.metadata.fileName}</span>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+            <span className="px-1.5 py-0.5 border border-zinc-600/50 text-[10px] font-semibold text-zinc-400">
+              {t.mergeHome.baseLabel}
+            </span>
+            <span className="font-semibold">{result.baseModel.metadata.fileName}</span>
+            <span className="text-zinc-500">·</span>
+            <span className="px-1.5 py-0.5 border border-sky-500/40 text-[10px] font-semibold text-sky-400">
+              {t.mergeHome.oursLabel}
+            </span>
+            <span className="font-semibold">{result.oursModel.metadata.fileName}</span>
+            <span className="text-zinc-500">·</span>
+            <span className="px-1.5 py-0.5 border border-amber-500/40 text-[10px] font-semibold text-amber-400">
+              {t.mergeHome.theirsLabel}
+            </span>
+            <span className="font-semibold">{result.theirsModel.metadata.fileName}</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onResetFiles}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
-                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border transition-colors whitespace-nowrap ${btnClass}`}
             >
               <FolderOpen className="w-3.5 h-3.5" />
-              Select files
+              {t.toolbar.openFiles}
             </button>
             <button
               type="button"
               onClick={onPreviewMergeReport}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
-                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border transition-colors whitespace-nowrap ${btnClass}`}
             >
               <FileCode className="w-3.5 h-3.5" />
-              View Report
+              {t.toolbar.viewReport}
             </button>
             <button
               type="button"
               onClick={onExportMergeReport}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold border transition-colors whitespace-nowrap ${
                 isDark
-                  ? 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
-                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                  ? 'border-zinc-400 bg-zinc-100 text-zinc-950 hover:bg-white'
+                  : 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800'
               }`}
             >
               <Download className="w-3.5 h-3.5" />
-              Export HTML Report
+              {t.toolbar.exportReport}
             </button>
           </div>
         </div>
 
-        {/* Immediate Merge Analysis Complete Banner */}
+        {/* Merge Status Banner */}
         <div
-          className={`mt-3 pt-3 border-t flex flex-wrap items-center justify-between gap-4 ${
-            isDark ? 'border-slate-800/80' : 'border-slate-200'
+          className={`mt-2 pt-2 border-t flex flex-wrap items-center justify-between gap-4 ${
+            isDark ? 'border-[#2b2d32]' : 'border-zinc-300'
           }`}
         >
-          <div className="flex flex-wrap items-center gap-6 text-sm tabular-nums">
-            <span className="font-semibold">Merge analysis complete</span>
+          <div className="flex flex-wrap items-center gap-5 text-xs tabular-nums">
+            <span className="font-semibold">{t.mergeView.analysisComplete}</span>
             <span
-              className={`flex items-center gap-1.5 font-mono text-xs font-semibold ${
+              className={`font-mono font-semibold ${
                 isDark ? 'text-emerald-400' : 'text-emerald-700'
               }`}
             >
-              ✓ {result.summary.autoMergedTotal} changes can be merged automatically
+              ✓ {result.summary.autoMergedTotal} {t.mergeView.autoMergeCountMsg}
             </span>
             {result.summary.remainingConflicts > 0 ? (
               <span
-                className={`flex items-center gap-1.5 font-mono text-xs font-semibold ${
+                className={`font-mono font-semibold ${
                   isDark ? 'text-amber-400' : 'text-amber-700'
                 }`}
               >
                 ⚠ {result.summary.remainingConflicts}{' '}
-                {result.summary.remainingConflicts === 1 ? 'conflict requires' : 'conflicts require'}{' '}
-                your decision
+                {t.mergeView.conflictsRequireDecisionMsg}
               </span>
             ) : (
               <span
-                className={`flex items-center gap-1.5 font-mono text-xs font-semibold ${
+                className={`font-mono font-semibold ${
                   isDark ? 'text-emerald-400' : 'text-emerald-700'
                 }`}
               >
-                ✓ 0 remaining conflicts — Merge ready to export
+                ✓ {t.mergeView.zeroConflictsReadyMsg}
               </span>
             )}
           </div>
 
-          {/* Navigation Tabs inside Merge Workspace */}
           <div
-            className={`flex items-center gap-1 p-0.5 rounded border ${
-              isDark
-                ? 'bg-slate-950 border-slate-800'
-                : 'bg-slate-100 border-slate-300/80'
+            className={`flex items-center border ${
+              isDark ? 'border-[#2e3036] bg-[#121316]' : 'border-zinc-300 bg-zinc-200/70'
             }`}
           >
             <button
               type="button"
               onClick={() => setActiveTab('conflicts')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap tabular-nums ${
+              className={`px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap tabular-nums ${
                 activeTab === 'conflicts'
                   ? isDark
-                    ? 'bg-slate-800 text-white'
-                    : 'bg-white text-slate-900 shadow-2xs'
+                    ? 'bg-[#2b2d34] text-white font-semibold'
+                    : 'bg-white text-zinc-950 font-semibold'
                   : isDark
-                  ? 'text-slate-400 hover:text-slate-200'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'text-zinc-400 hover:text-zinc-200'
+                  : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
-              Conflicts ({result.summary.resolvedConflicts}/{result.summary.totalConflicts})
+              {t.mergeView.tabConflicts} ({result.summary.resolvedConflicts}/
+              {result.summary.totalConflicts})
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('auto')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap tabular-nums ${
+              className={`px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap tabular-nums ${
                 activeTab === 'auto'
                   ? isDark
-                    ? 'bg-slate-800 text-white'
-                    : 'bg-white text-slate-900 shadow-2xs'
+                    ? 'bg-[#2b2d34] text-white font-semibold'
+                    : 'bg-white text-zinc-950 font-semibold'
                   : isDark
-                  ? 'text-slate-400 hover:text-slate-200'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'text-zinc-400 hover:text-zinc-200'
+                  : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
-              Auto-Merged ({result.summary.autoMergedTotal})
+              {t.mergeView.tabAutoMerged} ({result.summary.autoMergedTotal})
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('summary')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap ${
+              className={`px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'summary'
                   ? isDark
-                    ? 'bg-slate-800 text-white'
-                    : 'bg-white text-slate-900 shadow-2xs'
+                    ? 'bg-[#2b2d34] text-white font-semibold'
+                    : 'bg-white text-zinc-950 font-semibold'
                   : isDark
-                  ? 'text-slate-400 hover:text-slate-200'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'text-zinc-400 hover:text-zinc-200'
+                  : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
-              Merge Summary &amp; Export
+              {t.mergeView.tabSummary}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-6 max-w-6xl w-full mx-auto space-y-6">
+      {/* Main Content Dock */}
+      <div className="flex-1 flex flex-col min-h-0">
         {activeTab === 'conflicts' && (
           <>
             {result.conflicts.length === 0 ? (
-              /* Empty State: No Conflicts */
               <div
-                className={`p-8 rounded-lg border text-center ${
+                className={`max-w-md mx-auto my-12 p-6 border text-center ${
                   isDark
-                    ? 'border-slate-800 bg-slate-900/50'
-                    : 'border-slate-200 bg-white'
+                    ? 'border-[#2e3036] bg-[#18191c]'
+                    : 'border-zinc-300 bg-white'
                 }`}
               >
-                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-                <h2 className="text-base font-semibold mb-1">✓ No conflicts</h2>
-                <p className="text-xs text-slate-400 mb-4">
-                  All {result.summary.autoMergedTotal} changes can be merged automatically without manual intervention.
+                <CheckCircle2 className="w-7 h-7 text-emerald-400 mx-auto mb-2" />
+                <h2 className="text-sm font-semibold mb-1">
+                  {t.mergeView.noConflictsTitle}
+                </h2>
+                <p className="text-xs text-zinc-400 mb-4">
+                  {t.mergeView.noConflictsDesc} ({result.summary.autoMergedTotal})
                 </p>
                 <button
                   type="button"
                   onClick={() => setActiveTab('summary')}
-                  className="px-4 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors"
+                  className={`px-4 py-1.5 text-xs font-semibold border transition-colors ${
+                    isDark
+                      ? 'border-zinc-300 bg-zinc-100 text-zinc-950 hover:bg-white'
+                      : 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800'
+                  }`}
                 >
-                  Proceed to Merge Summary &amp; Export →
+                  {t.mergeView.proceedToExportBtn}
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
-                {/* Left Sidebar: Conflict Queue */}
-                <div
-                  className={`rounded-lg border overflow-hidden ${
+              <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+                {/* Left Dock: Conflict List Queue */}
+                <aside
+                  className={`w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r flex flex-col ${
                     isDark
-                      ? 'border-slate-800 bg-slate-900/40'
-                      : 'border-slate-200 bg-white'
+                      ? 'border-[#2b2d32] bg-[#18191c]'
+                      : 'border-zinc-300 bg-zinc-100/70'
                   }`}
                 >
                   <div
-                    className={`px-3.5 py-2.5 border-b flex items-center justify-between text-xs font-semibold ${
+                    className={`px-3 py-2 border-b flex items-center justify-between text-xs font-mono font-semibold ${
                       isDark
-                        ? 'border-slate-800 bg-slate-900/80 text-slate-300'
-                        : 'border-slate-200 bg-slate-50 text-slate-700'
+                        ? 'border-[#2b2d32] bg-[#1e1f23] text-zinc-300'
+                        : 'border-zinc-300 bg-zinc-100 text-zinc-700'
                     }`}
                   >
-                    <span>Conflicts ({result.conflicts.length})</span>
-                    <span className="font-mono text-[11px] text-slate-400 tabular-nums">
-                      {result.summary.remainingConflicts} remaining
+                    <span>
+                      {t.mergeView.tabConflicts} ({result.conflicts.length})
+                    </span>
+                    <span className="text-[11px] text-zinc-400 tabular-nums">
+                      {result.summary.remainingConflicts} {t.mergeView.remainingCount}
                     </span>
                   </div>
 
                   <div
-                    className={`divide-y ${
-                      isDark ? 'divide-slate-800/70' : 'divide-slate-200'
+                    className={`flex-1 overflow-y-auto divide-y ${
+                      isDark ? 'divide-[#26282d]' : 'divide-zinc-200'
                     }`}
                   >
                     {result.conflicts.map((c, idx) => {
@@ -332,34 +335,34 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
                           key={c.id}
                           type="button"
                           onClick={() => handleSelectConflict(idx)}
-                          className={`w-full text-left px-3.5 py-3 transition-colors ${
+                          className={`w-full text-left px-3 py-2.5 transition-colors ${
                             isSelected
                               ? isDark
-                                ? 'bg-blue-500/15'
-                                : 'bg-blue-50'
+                                ? 'bg-[#282a30] border-l-2 border-l-amber-400'
+                                : 'bg-white border-l-2 border-l-zinc-900'
                               : isDark
-                              ? 'hover:bg-slate-800/50'
-                              : 'hover:bg-slate-50'
+                              ? 'hover:bg-[#202227]'
+                              : 'hover:bg-zinc-200/50'
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2 text-xs mb-1">
-                            <span className="font-mono text-[11px] text-slate-400 tabular-nums">
+                          <div className="flex items-center justify-between gap-2 text-xs mb-0.5">
+                            <span className="font-mono text-[11px] text-zinc-400 tabular-nums">
                               #{idx + 1} · {c.objectType}
                             </span>
                             {c.isResolved ? (
                               <span className="font-mono text-[11px] font-semibold text-emerald-400">
-                                ✓ Resolved
+                                ✓ {t.summary.resolved}
                               </span>
                             ) : (
                               <span className="font-mono text-[11px] font-semibold text-amber-400">
-                                ⚠ Conflict
+                                ⚠ {t.summary.conflict}
                               </span>
                             )}
                           </div>
                           <div className="font-mono text-xs font-semibold truncate">
                             {c.displayPath}
                           </div>
-                          <div className="text-xs text-slate-400 truncate mt-0.5">
+                          <div className="text-xs text-zinc-400 truncate">
                             {c.propertyLabel}
                           </div>
                         </button>
@@ -367,372 +370,372 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
                     })}
                   </div>
 
-                  {/* Safe bulk resolution helper */}
                   <div
                     className={`p-3 border-t space-y-2 ${
                       isDark
-                        ? 'border-slate-800 bg-slate-950/60'
-                        : 'border-slate-200 bg-slate-50'
+                        ? 'border-[#2b2d32] bg-[#141518]'
+                        : 'border-zinc-300 bg-zinc-100'
                     }`}
                   >
-                    <div className="text-[11px] text-slate-400 leading-relaxed">
-                      ✓ {result.summary.identicalChangeCount} identical changes in Ours &amp; Theirs were merged automatically.
+                    <div className="text-[11px] text-zinc-400 leading-relaxed">
+                      ✓ {result.summary.identicalChangeCount}{' '}
+                      {t.mergeView.identicalAutoMergedNote}
                     </div>
                     {result.summary.remainingConflicts > 0 && (
-                      <div className="flex flex-col gap-1.5 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => onResolveAllRemaining('KEEP_OURS')}
-                          className={`w-full px-2.5 py-1.5 text-xs font-medium rounded border transition-colors ${
-                            isDark
-                              ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                              : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                          }`}
-                        >
-                          Resolve remaining with Ours
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onResolveAllRemaining('KEEP_OURS')}
+                        className={`w-full px-2.5 py-1.5 text-xs font-medium border transition-colors ${btnClass}`}
+                      >
+                        {t.mergeView.resolveRemainingOursBtn}
+                      </button>
                     )}
                   </div>
-                </div>
+                </aside>
 
-                {/* Right Active Conflict Inspector Card */}
+                {/* Right Workbench: Conflict 1 of N Inspector */}
                 {currentConflict && (
-                  <div
-                    className={`rounded-lg border p-6 ${
-                      isDark
-                        ? 'border-slate-800 bg-slate-900/50'
-                        : 'border-slate-200 bg-white'
-                    }`}
-                  >
-                    {/* Conflict Header */}
-                    <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800/70">
-                      <div>
-                        <div className="font-mono text-xs font-bold tracking-wide text-amber-400 tabular-nums">
-                          CONFLICT {activeConflictIndex + 1} OF {result.conflicts.length}
-                        </div>
-                        <div className="text-xs text-slate-400 mt-0.5">
-                          Both Ours and Theirs modified this value differently from Base.
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          disabled={activeConflictIndex === 0}
-                          onClick={() =>
-                            handleSelectConflict(Math.max(0, activeConflictIndex - 1))
-                          }
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded border transition-colors disabled:opacity-40 ${
-                            isDark
-                              ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                              : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
-                          }`}
-                        >
-                          <ArrowLeft className="w-3.5 h-3.5" />
-                          Prev
-                        </button>
-                        <button
-                          type="button"
-                          disabled={
-                            activeConflictIndex === result.conflicts.length - 1
-                          }
-                          onClick={() =>
-                            handleSelectConflict(
-                              Math.min(
-                                result.conflicts.length - 1,
-                                activeConflictIndex + 1
-                              )
-                            )
-                          }
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded border transition-colors disabled:opacity-40 ${
-                            isDark
-                              ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                              : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
-                          }`}
-                        >
-                          Next
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Visual Hierarchy Tree Path (CUSTOMER -> NAME -> Width) */}
+                  <main className="flex-1 overflow-y-auto p-5">
                     <div
-                      className={`my-4 p-3.5 rounded border font-mono text-xs leading-relaxed ${
+                      className={`max-w-4xl border p-5 ${
                         isDark
-                          ? 'bg-slate-950/80 border-slate-800 text-slate-200'
-                          : 'bg-slate-50 border-slate-200 text-slate-800'
+                          ? 'border-[#2e3036] bg-[#16171a]'
+                          : 'border-zinc-300 bg-white'
                       }`}
                     >
-                      {currentConflict.parentPath.length > 0 ? (
-                        <>
-                          <div className="font-semibold text-slate-300">
-                            {currentConflict.parentPath[0]}
+                      <div
+                        className={`flex flex-wrap items-center justify-between gap-4 pb-3 border-b ${
+                          isDark ? 'border-[#2b2d32]' : 'border-zinc-200'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-mono text-xs font-bold text-amber-400 tabular-nums">
+                            {t.mergeView.conflictCounter}{' '}
+                            {activeConflictIndex + 1} / {result.conflicts.length}
                           </div>
-                          <div className="pl-2 text-slate-300">
-                            └── <span className="font-semibold">{currentConflict.objectName}</span>
+                          <div className="text-xs text-zinc-400 mt-0.5">
+                            {t.mergeView.conflictExplanation}
                           </div>
-                          <div className="pl-6 text-amber-400 font-semibold">
-                            └── {currentConflict.propertyLabel}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled={activeConflictIndex === 0}
+                            onClick={() =>
+                              handleSelectConflict(Math.max(0, activeConflictIndex - 1))
+                            }
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs border transition-colors disabled:opacity-40 ${btnClass}`}
+                          >
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                            {t.mergeView.prevBtn}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={
+                              activeConflictIndex === result.conflicts.length - 1
+                            }
+                            onClick={() =>
+                              handleSelectConflict(
+                                Math.min(
+                                  result.conflicts.length - 1,
+                                  activeConflictIndex + 1
+                                )
+                              )
+                            }
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs border transition-colors disabled:opacity-40 ${btnClass}`}
+                          >
+                            {t.mergeView.nextBtn}
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Hierarchy Path Tree (CUSTOMER -> NAME -> Width) */}
+                      <div
+                        dir="ltr"
+                        className={`my-4 p-3 border font-mono text-xs leading-relaxed ${
+                          isDark
+                            ? 'bg-[#121316] border-[#2e3036] text-zinc-200'
+                            : 'bg-zinc-50 border-zinc-300 text-zinc-800'
+                        }`}
+                      >
+                        {currentConflict.parentPath.length > 0 ? (
+                          <>
+                            <div className="font-semibold text-zinc-300">
+                              {currentConflict.parentPath[0]}
+                            </div>
+                            <div className="pl-2 text-zinc-300">
+                              └──{' '}
+                              <span className="font-semibold">
+                                {currentConflict.objectName}
+                              </span>
+                            </div>
+                            <div className="pl-6 text-amber-400 font-semibold">
+                              └── {currentConflict.propertyLabel}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="font-semibold text-zinc-300">
+                              {currentConflict.objectType}: {currentConflict.objectName}
+                            </div>
+                            <div className="pl-2 text-amber-400 font-semibold">
+                              └── {currentConflict.propertyLabel}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Three-Way Value Comparison Grid: BASE | OURS | THEIRS */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 my-4">
+                        <div
+                          className={`p-3.5 border ${
+                            currentConflict.resolvedChoice === 'KEEP_BASE'
+                              ? 'border-emerald-500'
+                              : isDark
+                              ? 'border-[#2e3036] bg-[#121316]'
+                              : 'border-zinc-300 bg-zinc-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-xs mb-2">
+                            <span className="font-mono font-bold text-zinc-400">
+                              {t.mergeHome.baseLabel}
+                            </span>
+                            <span className="text-[11px] font-mono text-zinc-500 truncate">
+                              {result.baseModel.metadata.fileName}
+                            </span>
                           </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="font-semibold text-slate-300">
-                            {currentConflict.objectType}: {currentConflict.objectName}
+                          <pre
+                            dir="ltr"
+                            className="font-mono text-sm font-semibold whitespace-pre-wrap break-words"
+                          >
+                            {currentConflict.baseFormatted}
+                          </pre>
+                        </div>
+
+                        <div
+                          className={`p-3.5 border ${
+                            currentConflict.resolvedChoice === 'KEEP_OURS'
+                              ? 'border-emerald-500'
+                              : isDark
+                              ? 'border-sky-800/60 bg-[#131d27]'
+                              : 'border-sky-300 bg-sky-50/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-xs mb-2">
+                            <span className="font-mono font-bold text-sky-400">
+                              {t.mergeHome.oursLabel}
+                            </span>
+                            <span className="text-[11px] font-mono text-zinc-500 truncate">
+                              {result.oursModel.metadata.fileName}
+                            </span>
                           </div>
-                          <div className="pl-2 text-amber-400 font-semibold">
-                            └── {currentConflict.propertyLabel}
+                          <pre
+                            dir="ltr"
+                            className="font-mono text-sm font-semibold whitespace-pre-wrap break-words"
+                          >
+                            {currentConflict.oursFormatted}
+                          </pre>
+                        </div>
+
+                        <div
+                          className={`p-3.5 border ${
+                            currentConflict.resolvedChoice === 'KEEP_THEIRS'
+                              ? 'border-emerald-500'
+                              : isDark
+                              ? 'border-amber-800/60 bg-[#241d12]'
+                              : 'border-amber-300 bg-amber-50/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-xs mb-2">
+                            <span className="font-mono font-bold text-amber-400">
+                              {t.mergeHome.theirsLabel}
+                            </span>
+                            <span className="text-[11px] font-mono text-zinc-500 truncate">
+                              {result.theirsModel.metadata.fileName}
+                            </span>
                           </div>
-                        </>
+                          <pre
+                            dir="ltr"
+                            className="font-mono text-sm font-semibold whitespace-pre-wrap break-words"
+                          >
+                            {currentConflict.theirsFormatted}
+                          </pre>
+                        </div>
+                      </div>
+
+                      {/* Resolution Actions: [ Keep Ours ] [ Keep Theirs ] [ Keep Base ] [ Custom ] */}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleApplyResolution('KEEP_OURS')}
+                          className={`px-3.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${
+                            currentConflict.resolvedChoice === 'KEEP_OURS'
+                              ? 'bg-sky-600 border-sky-500 text-white'
+                              : btnClass
+                          }`}
+                        >
+                          {t.mergeView.keepOursBtn}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleApplyResolution('KEEP_THEIRS')}
+                          className={`px-3.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${
+                            currentConflict.resolvedChoice === 'KEEP_THEIRS'
+                              ? 'bg-amber-600 border-amber-500 text-white'
+                              : btnClass
+                          }`}
+                        >
+                          {t.mergeView.keepTheirsBtn}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleApplyResolution('KEEP_BASE')}
+                          className={`px-3.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${
+                            currentConflict.resolvedChoice === 'KEEP_BASE'
+                              ? 'bg-zinc-600 border-zinc-400 text-white'
+                              : btnClass
+                          }`}
+                        >
+                          {t.mergeView.keepBaseBtn}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomInputMode((prev) => !prev);
+                            setCustomDraftValue(
+                              String(
+                                currentConflict.resolvedValue ??
+                                  currentConflict.oursValue ??
+                                  ''
+                              )
+                            );
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${
+                            currentConflict.resolvedChoice === 'CUSTOM' ||
+                            customInputMode
+                              ? 'bg-emerald-700 border-emerald-500 text-white'
+                              : btnClass
+                          }`}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          {t.mergeView.customBtn}
+                        </button>
+                      </div>
+
+                      {customInputMode && (
+                        <div
+                          className={`mt-4 p-3.5 border ${
+                            isDark
+                              ? 'border-[#2e3036] bg-[#121316]'
+                              : 'border-zinc-300 bg-zinc-50'
+                          }`}
+                        >
+                          <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+                            {t.mergeView.customValueLabel} (
+                            {currentConflict.displayPath} →{' '}
+                            {currentConflict.propertyLabel})
+                          </label>
+                          {currentConflict.targetKind === 'SOURCE_CODE' ? (
+                            <textarea
+                              dir="ltr"
+                              rows={6}
+                              value={customDraftValue}
+                              onChange={(e) => setCustomDraftValue(e.target.value)}
+                              className={`w-full p-2 text-xs font-mono border outline-none ${
+                                isDark
+                                  ? 'bg-[#18191c] border-[#34363d] text-zinc-100'
+                                  : 'bg-white border-zinc-300 text-zinc-900'
+                              }`}
+                            />
+                          ) : (
+                            <input
+                              dir="ltr"
+                              type="text"
+                              value={customDraftValue}
+                              onChange={(e) => setCustomDraftValue(e.target.value)}
+                              className={`w-full px-2.5 py-1.5 text-xs font-mono border outline-none ${
+                                isDark
+                                  ? 'bg-[#18191c] border-[#34363d] text-zinc-100'
+                                  : 'bg-white border-zinc-300 text-zinc-900'
+                              }`}
+                            />
+                          )}
+                          <div className="mt-2 flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setCustomInputMode(false)}
+                              className="px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200"
+                            >
+                              {t.mergeView.cancelBtn}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const parsed =
+                                  typeof currentConflict.oursValue === 'number' &&
+                                  !Number.isNaN(Number(customDraftValue))
+                                    ? Number(customDraftValue)
+                                    : customDraftValue;
+                                handleApplyResolution('CUSTOM', parsed);
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-500"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              {t.mergeView.applyCustomBtn}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {currentConflict.isResolved && (
+                        <div
+                          className={`mt-4 p-3 border flex flex-wrap items-center justify-between gap-3 ${
+                            isDark
+                              ? 'border-emerald-800/60 bg-[#13261d] text-emerald-200'
+                              : 'border-emerald-300 bg-emerald-50 text-emerald-950'
+                          }`}
+                        >
+                          <div className="text-xs">
+                            <span className="font-semibold">
+                              {t.mergeView.conflictResolvedBanner}
+                            </span>{' '}
+                            · {t.mergeView.resultWillUse}{' '}
+                            <span className="font-mono font-semibold">
+                              {currentConflict.resolvedFormatted}
+                            </span>{' '}
+                            ({currentConflict.resolvedChoice})
+                          </div>
+
+                          {result.summary.remainingConflicts > 0 ? (
+                            <button
+                              type="button"
+                              onClick={handleJumpToNextUnresolved}
+                              className="px-3 py-1 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-500"
+                            >
+                              {t.mergeView.nextConflictBtn}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('summary')}
+                              className={`px-3 py-1 text-xs font-semibold ${
+                                isDark
+                                  ? 'bg-zinc-100 text-zinc-950 hover:bg-white'
+                                  : 'bg-zinc-900 text-white hover:bg-zinc-800'
+                              }`}
+                            >
+                              {t.mergeView.allResolvedReviewBtn}
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
-
-                    {/* BASE / OURS / THEIRS Comparison Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-5">
-                      {/* BASE */}
-                      <div
-                        className={`p-4 rounded border ${
-                          currentConflict.resolvedChoice === 'KEEP_BASE'
-                            ? 'border-emerald-500 ring-1 ring-emerald-500/40'
-                            : isDark
-                            ? 'border-slate-800 bg-slate-950/60'
-                            : 'border-slate-200 bg-slate-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-xs mb-2">
-                          <span className="font-mono font-bold text-slate-400">
-                            BASE
-                          </span>
-                          <span className="text-[11px] text-slate-500 truncate">
-                            {result.baseModel.metadata.fileName}
-                          </span>
-                        </div>
-                        <pre className="font-mono text-sm font-semibold whitespace-pre-wrap break-words">
-                          {currentConflict.baseFormatted}
-                        </pre>
-                      </div>
-
-                      {/* OURS */}
-                      <div
-                        className={`p-4 rounded border ${
-                          currentConflict.resolvedChoice === 'KEEP_OURS'
-                            ? 'border-emerald-500 ring-1 ring-emerald-500/40'
-                            : isDark
-                            ? 'border-blue-900/50 bg-blue-950/20'
-                            : 'border-blue-200 bg-blue-50/40'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-xs mb-2">
-                          <span className="font-mono font-bold text-blue-400">
-                            OURS
-                          </span>
-                          <span className="text-[11px] text-slate-500 truncate">
-                            {result.oursModel.metadata.fileName}
-                          </span>
-                        </div>
-                        <pre className="font-mono text-sm font-semibold whitespace-pre-wrap break-words">
-                          {currentConflict.oursFormatted}
-                        </pre>
-                      </div>
-
-                      {/* THEIRS */}
-                      <div
-                        className={`p-4 rounded border ${
-                          currentConflict.resolvedChoice === 'KEEP_THEIRS'
-                            ? 'border-emerald-500 ring-1 ring-emerald-500/40'
-                            : isDark
-                            ? 'border-purple-900/50 bg-purple-950/20'
-                            : 'border-purple-200 bg-purple-50/40'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-xs mb-2">
-                          <span className="font-mono font-bold text-purple-400">
-                            THEIRS
-                          </span>
-                          <span className="text-[11px] text-slate-500 truncate">
-                            {result.theirsModel.metadata.fileName}
-                          </span>
-                        </div>
-                        <pre className="font-mono text-sm font-semibold whitespace-pre-wrap break-words">
-                          {currentConflict.theirsFormatted}
-                        </pre>
-                      </div>
-                    </div>
-
-                    {/* Decision Action Buttons: [ Keep Ours ] [ Keep Theirs ] [ Keep Base ] [ Custom ] */}
-                    <div className="flex flex-wrap items-center gap-2.5 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => handleApplyResolution('KEEP_OURS')}
-                        className={`px-4 py-2 text-xs font-semibold rounded border transition-colors whitespace-nowrap ${
-                          currentConflict.resolvedChoice === 'KEEP_OURS'
-                            ? 'bg-blue-600 border-blue-500 text-white'
-                            : isDark
-                            ? 'border-blue-500/50 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20'
-                            : 'border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100'
-                        }`}
-                      >
-                        Keep Ours
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleApplyResolution('KEEP_THEIRS')}
-                        className={`px-4 py-2 text-xs font-semibold rounded border transition-colors whitespace-nowrap ${
-                          currentConflict.resolvedChoice === 'KEEP_THEIRS'
-                            ? 'bg-purple-600 border-purple-500 text-white'
-                            : isDark
-                            ? 'border-purple-500/50 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20'
-                            : 'border-purple-600 bg-purple-50 text-purple-700 hover:bg-purple-100'
-                        }`}
-                      >
-                        Keep Theirs
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleApplyResolution('KEEP_BASE')}
-                        className={`px-4 py-2 text-xs font-semibold rounded border transition-colors whitespace-nowrap ${
-                          currentConflict.resolvedChoice === 'KEEP_BASE'
-                            ? 'bg-slate-600 border-slate-500 text-white'
-                            : isDark
-                            ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
-                            : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        Keep Base
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCustomInputMode((prev) => !prev);
-                          setCustomDraftValue(
-                            String(
-                              currentConflict.resolvedValue ??
-                                currentConflict.oursValue ??
-                                ''
-                            )
-                          );
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded border transition-colors whitespace-nowrap ${
-                          currentConflict.resolvedChoice === 'CUSTOM' || customInputMode
-                            ? 'bg-amber-600 border-amber-500 text-white'
-                            : isDark
-                            ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
-                            : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        Custom
-                      </button>
-                    </div>
-
-                    {/* Custom Value / PL/SQL Editor */}
-                    {customInputMode && (
-                      <div
-                        className={`mt-4 p-4 rounded border ${
-                          isDark
-                            ? 'border-slate-700 bg-slate-950'
-                            : 'border-slate-300 bg-slate-50'
-                        }`}
-                      >
-                        <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                          Enter custom merged value for {currentConflict.displayPath} →{' '}
-                          {currentConflict.propertyLabel}:
-                        </label>
-                        {currentConflict.targetKind === 'SOURCE_CODE' ? (
-                          <textarea
-                            rows={6}
-                            value={customDraftValue}
-                            onChange={(e) => setCustomDraftValue(e.target.value)}
-                            className={`w-full p-2.5 text-xs font-mono rounded border outline-none ${
-                              isDark
-                                ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-blue-500'
-                                : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
-                            }`}
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={customDraftValue}
-                            onChange={(e) => setCustomDraftValue(e.target.value)}
-                            className={`w-full px-3 py-1.5 text-xs font-mono rounded border outline-none ${
-                              isDark
-                                ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-blue-500'
-                                : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
-                            }`}
-                          />
-                        )}
-                        <div className="mt-2.5 flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setCustomInputMode(false)}
-                            className="px-3 py-1 text-xs text-slate-400 hover:text-slate-200"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const parsed =
-                                typeof currentConflict.oursValue === 'number' &&
-                                !Number.isNaN(Number(customDraftValue))
-                                  ? Number(customDraftValue)
-                                  : customDraftValue;
-                              handleApplyResolution('CUSTOM', parsed);
-                            }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded bg-emerald-600 text-white hover:bg-emerald-500"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            Apply Custom Resolution
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Post-resolution feedback banner: ✓ Conflict resolved + Next conflict → */}
-                    {currentConflict.isResolved && (
-                      <div
-                        className={`mt-5 p-3.5 rounded border flex flex-wrap items-center justify-between gap-4 ${
-                          isDark
-                            ? 'border-emerald-800/60 bg-emerald-950/30 text-emerald-200'
-                            : 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                        }`}
-                      >
-                        <div className="text-xs">
-                          <span className="font-semibold">✓ Conflict resolved</span> ·
-                          Result will use{' '}
-                          <span className="font-mono font-semibold">
-                            {currentConflict.resolvedFormatted}
-                          </span>{' '}
-                          ({currentConflict.resolvedChoice})
-                        </div>
-
-                        {result.summary.remainingConflicts > 0 ? (
-                          <button
-                            type="button"
-                            onClick={handleJumpToNextUnresolved}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
-                          >
-                            Next conflict
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setActiveTab('summary')}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors"
-                          >
-                            All conflicts resolved — Review &amp; Export
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  </main>
                 )}
               </div>
             )}
@@ -740,215 +743,244 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
         )}
 
         {activeTab === 'auto' && (
-          <div
-            className={`rounded-lg border overflow-hidden ${
-              isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'
-            }`}
-          >
+          <div className="p-5 overflow-y-auto">
             <div
-              className={`px-4 py-3 border-b flex items-center justify-between ${
-                isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-slate-50'
+              className={`max-w-5xl mx-auto border overflow-hidden ${
+                isDark ? 'border-[#2e3036] bg-[#16171a]' : 'border-zinc-300 bg-white'
               }`}
             >
-              <div>
+              <div
+                className={`px-4 py-2.5 border-b ${
+                  isDark ? 'border-[#2e3036] bg-[#1e1f23]' : 'border-zinc-200 bg-zinc-100'
+                }`}
+              >
                 <h3 className="text-xs font-semibold">
-                  Automatically Merged Changes ({result.autoMergedDecisions.length})
+                  {t.mergeView.autoMergedTableTitle} (
+                  {result.autoMergedDecisions.length})
                 </h3>
-                <p className="text-[11px] text-slate-400">
-                  Non-conflicting changes from Ours ({result.summary.oursOnlyCount}), Theirs ({result.summary.theirsOnlyCount}), and identical updates ({result.summary.identicalChangeCount}).
+                <p className="text-[11px] text-zinc-400">
+                  {t.mergeView.autoMergedTableSub}
                 </p>
               </div>
-            </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr
-                    className={
-                      isDark
-                        ? 'bg-slate-900/60 text-slate-400 border-b border-slate-800'
-                        : 'bg-slate-100 text-slate-600 border-b border-slate-200'
-                    }
-                  >
-                    <th className="py-2 px-4 font-medium">Object</th>
-                    <th className="py-2 px-4 font-medium">Property / Target</th>
-                    <th className="py-2 px-4 font-medium">3-Way Rule</th>
-                    <th className="py-2 px-4 font-medium">BASE</th>
-                    <th className="py-2 px-4 font-medium">MERGED VALUE</th>
-                  </tr>
-                </thead>
-                <tbody
-                  className={`divide-y font-mono ${
-                    isDark ? 'divide-slate-800/70' : 'divide-slate-200'
-                  }`}
-                >
-                  {result.autoMergedDecisions.map((d) => (
-                    <tr key={d.id}>
-                      <td className="py-2 px-4 font-semibold">{d.displayPath}</td>
-                      <td className="py-2 px-4 font-sans">{d.propertyLabel}</td>
-                      <td className="py-2 px-4 text-slate-400">{d.decisionType}</td>
-                      <td className="py-2 px-4 text-slate-400 truncate max-w-[200px]">
-                        {d.baseFormatted}
-                      </td>
-                      <td className="py-2 px-4 text-emerald-400 font-semibold truncate max-w-[240px]">
-                        {d.resolvedFormatted}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr
+                      className={
+                        isDark
+                          ? 'bg-[#18191c] text-zinc-400 border-b border-[#2e3036]'
+                          : 'bg-zinc-50 text-zinc-600 border-b border-zinc-300'
+                      }
+                    >
+                      <th className="py-1.5 px-3 font-medium">
+                        {t.mergeView.colObject}
+                      </th>
+                      <th className="py-1.5 px-3 font-medium">
+                        {t.mergeView.colTarget}
+                      </th>
+                      <th className="py-1.5 px-3 font-medium">
+                        {t.mergeView.colRule}
+                      </th>
+                      <th className="py-1.5 px-3 font-medium">
+                        {t.mergeHome.baseLabel}
+                      </th>
+                      <th className="py-1.5 px-3 font-medium">
+                        {t.mergeView.colMergedValue}
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody
+                    className={`divide-y font-mono ${
+                      isDark ? 'divide-[#26282d]' : 'divide-zinc-200'
+                    }`}
+                  >
+                    {result.autoMergedDecisions.map((d) => (
+                      <tr key={d.id}>
+                        <td className="py-1.5 px-3 font-semibold">
+                          {d.displayPath}
+                        </td>
+                        <td className="py-1.5 px-3 font-sans">
+                          {d.propertyLabel}
+                        </td>
+                        <td className="py-1.5 px-3 text-zinc-400">
+                          {d.decisionType}
+                        </td>
+                        <td className="py-1.5 px-3 text-zinc-400 truncate max-w-[180px]">
+                          {d.baseFormatted}
+                        </td>
+                        <td className="py-1.5 px-3 text-emerald-400 font-semibold truncate max-w-[240px]">
+                          {d.resolvedFormatted}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Merge Summary Card (Always shown in Summary tab or below conflicts when all resolved) */}
-        {(activeTab === 'summary' || allConflictsResolved) && (
-          <div
-            className={`max-w-xl mx-auto rounded-lg border p-6 ${
-              isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'
-            }`}
-          >
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800/80">
-              <h2 className="text-base font-semibold">
-                {allConflictsResolved ? 'Merge ready' : 'Merge status'}
-              </h2>
-              {allConflictsResolved ? (
-                <span className="font-mono text-xs text-emerald-400 font-semibold">
-                  ✓ Ready for export
-                </span>
-              ) : (
-                <span className="font-mono text-xs text-amber-400 font-semibold">
-                  ⚠ {result.summary.remainingConflicts} unresolved conflict(s)
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-2.5 text-sm tabular-nums mb-6">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">✓ Automatically merged</span>
-                <span className="font-mono font-bold text-emerald-400">
-                  {result.summary.autoMergedTotal}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">✓ Conflicts resolved</span>
-                <span className="font-mono font-bold text-blue-400">
-                  {result.summary.resolvedConflicts}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">
-                  {result.summary.remainingConflicts === 0 ? '✓' : '⚠'} Remaining
-                  conflicts
-                </span>
-                <span
-                  className={`font-mono font-bold ${
-                    result.summary.remainingConflicts === 0
-                      ? 'text-emerald-400'
-                      : 'text-amber-400'
-                  }`}
-                >
-                  {result.summary.remainingConflicts}
-                </span>
-              </div>
-            </div>
-
-            <div className="mb-5">
-              <label className="block text-xs font-medium text-slate-400 mb-1">
-                Output (never overwrites original files):
-              </label>
-              <input
-                type="text"
-                value={result.outputFileName}
-                onChange={(e) => onUpdateOutputFileName(e.target.value)}
-                className={`w-full px-3 py-1.5 text-xs font-mono rounded border outline-none ${
-                  isDark
-                    ? 'bg-slate-950 border-slate-700 text-slate-100 focus:border-blue-500'
-                    : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-blue-600'
-                }`}
-              />
-            </div>
-
-            {/* Validation Results */}
-            {validationReport && (
+        {activeTab === 'summary' && (
+          <div className="p-6">
+            <div
+              className={`max-w-lg mx-auto border p-5 ${
+                isDark ? 'border-[#2e3036] bg-[#16171a]' : 'border-zinc-300 bg-white'
+              }`}
+            >
               <div
-                className={`mb-5 p-3.5 rounded border text-xs space-y-2 ${
-                  validationReport.isValid
-                    ? isDark
-                      ? 'border-emerald-800/60 bg-emerald-950/25'
-                      : 'border-emerald-200 bg-emerald-50'
-                    : isDark
-                    ? 'border-rose-800/60 bg-rose-950/25'
-                    : 'border-rose-200 bg-rose-50'
+                className={`flex items-center justify-between pb-3 mb-4 border-b ${
+                  isDark ? 'border-[#2e3036]' : 'border-zinc-200'
                 }`}
               >
-                <div className="font-semibold flex items-center gap-1.5">
-                  {validationReport.isValid ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4 text-rose-400" />
-                  )}
-                  <span>
-                    {validationReport.isValid
-                      ? 'Pre-export Oracle Forms structural validation passed'
-                      : 'Validation blocked — resolve issues below before exporting'}
+                <h2 className="text-sm font-semibold">
+                  {allConflictsResolved
+                    ? t.mergeView.mergeReadyTitle
+                    : t.mergeView.mergeStatusTitle}
+                </h2>
+                {allConflictsResolved ? (
+                  <span className="font-mono text-xs text-emerald-400 font-semibold">
+                    {t.mergeView.readyForExportBadge}
+                  </span>
+                ) : (
+                  <span className="font-mono text-xs text-amber-400 font-semibold">
+                    {t.mergeView.unresolvedConflictsBadge} (
+                    {result.summary.remainingConflicts})
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-2 text-xs tabular-nums mb-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400">
+                    ✓ {t.mergeView.statAutoMerged}
+                  </span>
+                  <span className="font-mono font-bold text-emerald-400">
+                    {result.summary.autoMergedTotal}
                   </span>
                 </div>
-                <div className="space-y-1 pl-5">
-                  {validationReport.checks.map((chk) => (
-                    <div key={chk.id} className="flex items-baseline gap-2">
-                      <span
-                        className={`font-mono font-bold ${
-                          chk.passed ? 'text-emerald-400' : 'text-rose-400'
-                        }`}
-                      >
-                        {chk.passed ? '✓' : '×'}
-                      </span>
-                      <div>
-                        <span className="font-medium">{chk.label}:</span>{' '}
-                        <span className="text-slate-400">{chk.detail}</span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400">
+                    ✓ {t.mergeView.statConflictsResolved}
+                  </span>
+                  <span className="font-mono font-bold text-sky-400">
+                    {result.summary.resolvedConflicts}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400">
+                    {result.summary.remainingConflicts === 0 ? '✓' : '⚠'}{' '}
+                    {t.mergeView.statRemainingConflicts}
+                  </span>
+                  <span
+                    className={`font-mono font-bold ${
+                      result.summary.remainingConflicts === 0
+                        ? 'text-emerald-400'
+                        : 'text-amber-400'
+                    }`}
+                  >
+                    {result.summary.remainingConflicts}
+                  </span>
                 </div>
               </div>
-            )}
 
-            {exportBanner && (
-              <div
-                className={`mb-4 p-3 rounded border text-xs ${
-                  isDark
-                    ? 'border-blue-800/60 bg-blue-950/30 text-blue-200'
-                    : 'border-blue-200 bg-blue-50 text-blue-900'
-                }`}
-              >
-                ✓ {exportBanner}
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-zinc-400 mb-1">
+                  {t.mergeView.outputLabel}
+                </label>
+                <input
+                  dir="ltr"
+                  type="text"
+                  value={result.outputFileName}
+                  onChange={(e) => onUpdateOutputFileName(e.target.value)}
+                  className={`w-full px-2.5 py-1.5 text-xs font-mono border outline-none ${
+                    isDark
+                      ? 'bg-[#121316] border-[#34363d] text-zinc-100'
+                      : 'bg-zinc-50 border-zinc-300 text-zinc-900'
+                  }`}
+                />
               </div>
-            )}
 
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={handleTriggerValidation}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded border transition-colors whitespace-nowrap ${
-                  isDark
-                    ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                    : 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200'
-                }`}
-              >
-                <ShieldCheck className="w-4 h-4" />
-                Validate
-              </button>
+              {validationReport && (
+                <div
+                  className={`mb-4 p-3 border text-xs space-y-1.5 ${
+                    validationReport.isValid
+                      ? isDark
+                        ? 'border-emerald-800/60 bg-[#13261d]'
+                        : 'border-emerald-300 bg-emerald-50'
+                      : isDark
+                      ? 'border-rose-800/60 bg-[#2d1619]'
+                      : 'border-rose-300 bg-rose-50'
+                  }`}
+                >
+                  <div className="font-semibold flex items-center gap-1.5">
+                    {validationReport.isValid ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                    )}
+                    <span>
+                      {validationReport.isValid
+                        ? t.mergeView.validationPassedBanner
+                        : t.mergeView.validationBlockedBanner}
+                    </span>
+                  </div>
+                  <div className="space-y-1 pl-5">
+                    {validationReport.checks.map((chk) => (
+                      <div key={chk.id} className="flex items-baseline gap-2">
+                        <span
+                          className={`font-mono font-bold ${
+                            chk.passed ? 'text-emerald-400' : 'text-rose-400'
+                          }`}
+                        >
+                          {chk.passed ? '✓' : '×'}
+                        </span>
+                        <div>
+                          <span className="font-medium">{chk.label}:</span>{' '}
+                          <span className="text-zinc-400">{chk.detail}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-              <button
-                type="button"
-                disabled={!allConflictsResolved}
-                onClick={handleTriggerExport}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-40 transition-colors whitespace-nowrap"
-              >
-                <Download className="w-4 h-4" />
-                Export merged FMB
-              </button>
+              {exportBanner && (
+                <div
+                  className={`mb-4 p-2.5 border text-xs font-mono ${
+                    isDark
+                      ? 'border-emerald-800/60 bg-[#13261d] text-emerald-200'
+                      : 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                  }`}
+                >
+                  ✓ {exportBanner}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleTriggerValidation}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${btnClass}`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  {t.mergeView.validateBtn}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!allConflictsResolved}
+                  onClick={handleTriggerExport}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap disabled:opacity-40 ${
+                    isDark
+                      ? 'border-zinc-200 bg-zinc-100 text-zinc-950 hover:bg-white'
+                      : 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800'
+                  }`}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {t.mergeView.exportMergedFmbBtn}
+                </button>
+              </div>
             </div>
           </div>
         )}

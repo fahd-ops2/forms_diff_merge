@@ -1,19 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Check,
   Download,
-  FileSpreadsheet,
   FolderOpen,
-  GitCompare,
-  GitMerge,
-  Loader2,
+  Globe,
   Moon,
   Play,
-  Settings,
   Sun,
-  Terminal,
   Upload,
-  AlertTriangle,
 } from 'lucide-react';
 import { CompareWorkspace } from './components/CompareWorkspace';
 import { MergeWorkspace } from './components/MergeWorkspace';
@@ -33,10 +26,15 @@ import {
 import { FmbExtractionError } from './fmb/models/fmb-models';
 import { FmbNormalizer } from './fmb/normalizer/fmb-normalizer';
 import { FmbParser } from './fmb/parser/fmb-parser';
+import {
+  I18nProvider,
+  LocaleCode,
+  SUPPORTED_LOCALES,
+  useI18n,
+} from './i18n/translations';
 import { ConflictResolver } from './merge/conflict-resolver';
 import { MergeEngine } from './merge/merge-engine';
 import {
-  ConflictResolutionChoice,
   MergeValidationReport,
   ThreeWayMergeResult,
 } from './merge/merge-models';
@@ -53,23 +51,22 @@ interface AnalysisProgress {
   }>;
 }
 
-export default function App() {
+function FmbDesktopWorkbench() {
+  const { t, locale, setLocale } = useI18n();
   const [mode, setMode] = useState<ActiveMode>('compare');
   const [isDark, setIsDark] = useState<boolean>(true);
 
-  // Compare file inputs (pre-populated with customer_v1.fmb and customer_v2.fmb ready for 1-click Compare, or user can clear/drop their own)
   const [oldFileInput, setOldFileInput] = useState<FmbFileInput | null>({
     name: 'customer_v1.fmb',
-    size: 2516582, // 2.4 MB
+    size: 2516582,
     presetRole: 'v1',
   });
   const [newFileInput, setNewFileInput] = useState<FmbFileInput | null>({
     name: 'customer_v2.fmb',
-    size: 2726297, // 2.6 MB
+    size: 2726297,
     presetRole: 'v2',
   });
 
-  // Merge file inputs (BASE, OURS, THEIRS)
   const [baseFileInput, setBaseFileInput] = useState<FmbFileInput | null>({
     name: 'customer_base.fmb',
     size: 2485120,
@@ -86,21 +83,18 @@ export default function App() {
     presetRole: 'theirs',
   });
 
-  // Active results
   const [compareResult, setCompareResult] =
     useState<FmbComparisonResult | null>(null);
   const [mergeResult, setMergeResult] = useState<ThreeWayMergeResult | null>(
     null
   );
 
-  // Progress & Drag States
   const [progress, setProgress] = useState<AnalysisProgress | null>(null);
   const [dragOverlayState, setDragOverlayState] = useState<
     'none' | 'valid' | 'invalid'
   >('none');
   const [inlineToast, setInlineToast] = useState<string | null>(null);
 
-  // Modals
   const [activeError, setActiveError] = useState<FmbExtractionError | null>(
     null
   );
@@ -138,9 +132,6 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  /**
-   * Executes the non-blocking Compare pipeline with meaningful step-by-step progress.
-   */
   const runComparison = useCallback(
     async (overrideOld?: FmbFileInput, overrideNew?: FmbFileInput) => {
       const targetOld = overrideOld ?? oldFileInput;
@@ -152,64 +143,64 @@ export default function App() {
 
       try {
         setProgress({
-          title: 'Analyzing FMB files...',
+          title: t.progress.analyzingCompare,
           percent: 18,
           steps: [
-            { label: 'Reading old form', state: 'active' },
-            { label: 'Reading new form', state: 'pending' },
-            { label: 'Extracting objects', state: 'pending' },
-            { label: 'Comparing structure', state: 'pending' },
-            { label: 'Analyzing source changes...', state: 'pending' },
+            { label: t.progress.stepReadOld, state: 'active' },
+            { label: t.progress.stepReadNew, state: 'pending' },
+            { label: t.progress.stepExtractObjects, state: 'pending' },
+            { label: t.progress.stepCompareStructure, state: 'pending' },
+            { label: t.progress.stepAnalyzeSource, state: 'pending' },
           ],
         });
 
-        await new Promise((r) => setTimeout(r, 90));
+        await new Promise((r) => setTimeout(r, 85));
         const rawOld = await FmbExtractor.extract(targetOld);
 
         setProgress({
-          title: 'Analyzing FMB files...',
+          title: t.progress.analyzingCompare,
           percent: 42,
           steps: [
-            { label: 'Reading old form', state: 'done' },
-            { label: 'Reading new form', state: 'active' },
-            { label: 'Extracting objects', state: 'pending' },
-            { label: 'Comparing structure', state: 'pending' },
-            { label: 'Analyzing source changes...', state: 'pending' },
+            { label: t.progress.stepReadOld, state: 'done' },
+            { label: t.progress.stepReadNew, state: 'active' },
+            { label: t.progress.stepExtractObjects, state: 'pending' },
+            { label: t.progress.stepCompareStructure, state: 'pending' },
+            { label: t.progress.stepAnalyzeSource, state: 'pending' },
           ],
         });
 
-        await new Promise((r) => setTimeout(r, 90));
+        await new Promise((r) => setTimeout(r, 85));
         const rawNew = await FmbExtractor.extract(targetNew);
 
         setProgress({
-          title: 'Analyzing FMB files...',
+          title: t.progress.analyzingCompare,
           percent: 64,
           steps: [
-            { label: 'Reading old form', state: 'done' },
-            { label: 'Reading new form', state: 'done' },
-            { label: 'Extracting objects', state: 'done' },
-            { label: 'Comparing structure', state: 'active' },
-            { label: 'Analyzing source changes...', state: 'pending' },
+            { label: t.progress.stepReadOld, state: 'done' },
+            { label: t.progress.stepReadNew, state: 'done' },
+            { label: t.progress.stepExtractObjects, state: 'done' },
+            { label: t.progress.stepCompareStructure, state: 'active' },
+            { label: t.progress.stepAnalyzeSource, state: 'pending' },
           ],
         });
 
-        await new Promise((r) => setTimeout(r, 90));
+        await new Promise((r) => setTimeout(r, 85));
         const normalizedOld = FmbNormalizer.normalize(FmbParser.parse(rawOld));
         const normalizedNew = FmbNormalizer.normalize(FmbParser.parse(rawNew));
 
         setProgress({
-          title: 'Analyzing FMB files...',
+          title: t.progress.analyzingCompare,
           percent: 82,
           steps: [
-            { label: 'Reading old form', state: 'done' },
-            { label: 'Reading new form', state: 'done' },
-            { label: 'Extracting objects', state: 'done' },
-            { label: 'Comparing structure', state: 'done' },
-            { label: 'Analyzing source changes...', state: 'active' },
+            { label: t.progress.stepReadOld, state: 'done' },
+            { label: t.progress.stepReadNew, state: 'done' },
+            { label: t.progress.stepExtractObjects, state: 'done' },
+            { label: t.progress.stepCompareStructure, state: 'done' },
+            { label: t.progress.stepAnalyzeSource, state: 'active' },
           ],
         });
 
-        await new Promise((r) => setTimeout(r, 110));
+        await new Promise((r) => setTimeout(r, 100));
         const diffResult = DiffEngine.compare(normalizedOld, normalizedNew);
 
         setProgress(null);
@@ -223,20 +214,17 @@ export default function App() {
             new FmbExtractionError({
               code: 'PARSE_FAILURE',
               fileName: targetOld.name,
-              message: 'Unable to read the selected FMB file.',
+              message: t.modals.errorDefaultTitle,
               technicalDetails: err instanceof Error ? err.message : String(err),
-              remediationSteps: ['Choose another FMB file'],
+              remediationSteps: [t.modals.chooseAnotherFileBtn],
             })
           );
         }
       }
     },
-    [oldFileInput, newFileInput]
+    [oldFileInput, newFileInput, t]
   );
 
-  /**
-   * Executes the non-blocking 3-Way Merge pipeline with meaningful step-by-step progress.
-   */
   const runMergeAnalysis = useCallback(
     async (
       overrideBase?: FmbFileInput,
@@ -251,17 +239,17 @@ export default function App() {
 
       try {
         setProgress({
-          title: 'Analyzing 3-way merge...',
+          title: t.progress.analyzingMerge,
           percent: 25,
           steps: [
-            { label: 'Reading Base, Ours, and Theirs forms', state: 'active' },
-            { label: 'Normalizing object hierarchies', state: 'pending' },
-            { label: 'Evaluating 3-way merge rules', state: 'pending' },
-            { label: 'Detecting property & PL/SQL conflicts', state: 'pending' },
+            { label: t.progress.stepReadThreeWay, state: 'active' },
+            { label: t.progress.stepNormalizeHierarchy, state: 'pending' },
+            { label: t.progress.stepEvaluateRules, state: 'pending' },
+            { label: t.progress.stepDetectConflicts, state: 'pending' },
           ],
         });
 
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 90));
         const [rawBase, rawOurs, rawTheirs] = await Promise.all([
           FmbExtractor.extract(tBase),
           FmbExtractor.extract(tOurs),
@@ -269,33 +257,33 @@ export default function App() {
         ]);
 
         setProgress({
-          title: 'Analyzing 3-way merge...',
+          title: t.progress.analyzingMerge,
           percent: 60,
           steps: [
-            { label: 'Reading Base, Ours, and Theirs forms', state: 'done' },
-            { label: 'Normalizing object hierarchies', state: 'active' },
-            { label: 'Evaluating 3-way merge rules', state: 'pending' },
-            { label: 'Detecting property & PL/SQL conflicts', state: 'pending' },
+            { label: t.progress.stepReadThreeWay, state: 'done' },
+            { label: t.progress.stepNormalizeHierarchy, state: 'active' },
+            { label: t.progress.stepEvaluateRules, state: 'pending' },
+            { label: t.progress.stepDetectConflicts, state: 'pending' },
           ],
         });
 
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 90));
         const normBase = FmbNormalizer.normalize(FmbParser.parse(rawBase));
         const normOurs = FmbNormalizer.normalize(FmbParser.parse(rawOurs));
         const normTheirs = FmbNormalizer.normalize(FmbParser.parse(rawTheirs));
 
         setProgress({
-          title: 'Analyzing 3-way merge...',
+          title: t.progress.analyzingMerge,
           percent: 88,
           steps: [
-            { label: 'Reading Base, Ours, and Theirs forms', state: 'done' },
-            { label: 'Normalizing object hierarchies', state: 'done' },
-            { label: 'Evaluating 3-way merge rules', state: 'done' },
-            { label: 'Detecting property & PL/SQL conflicts', state: 'active' },
+            { label: t.progress.stepReadThreeWay, state: 'done' },
+            { label: t.progress.stepNormalizeHierarchy, state: 'done' },
+            { label: t.progress.stepEvaluateRules, state: 'done' },
+            { label: t.progress.stepDetectConflicts, state: 'active' },
           ],
         });
 
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 90));
         const analysis = MergeEngine.analyzeThreeWayMerge(
           normBase,
           normOurs,
@@ -311,10 +299,9 @@ export default function App() {
         }
       }
     },
-    [baseFileInput, oursFileInput, theirsFileInput]
+    [baseFileInput, oursFileInput, theirsFileInput, t]
   );
 
-  // Handle dropped or selected files
   const handleFilesSelected = (
     files: FileList | File[],
     slot: 'both' | 'old' | 'new' | 'base' | 'ours' | 'theirs' = 'both'
@@ -322,7 +309,6 @@ export default function App() {
     const fileArray = Array.from(files);
     if (fileArray.length === 0) return;
 
-    // Validate extensions immediately
     const invalidFile = fileArray.find(
       (f) => !FmbExtractor.isValidExtension(f.name)
     );
@@ -331,9 +317,9 @@ export default function App() {
         new FmbExtractionError({
           code: 'UNSUPPORTED_EXTENSION',
           fileName: invalidFile.name,
-          message: 'This file is not supported. Please select an .fmb file.',
-          technicalDetails: `Selected file "${invalidFile.name}" has an unsupported file extension. Only .fmb, .xml (Forms2XML), and .fmt files are accepted.`,
-          remediationSteps: ['Please select an .fmb file.'],
+          message: t.modals.errorFileUnsupported,
+          technicalDetails: `Rejected "${invalidFile.name}". Expected .fmb, .xml (Forms2XML), or .fmt.`,
+          remediationSteps: [t.modals.errorFileUnsupported],
         })
       );
       return;
@@ -341,7 +327,6 @@ export default function App() {
 
     if (mode === 'compare') {
       if (fileArray.length >= 2 && slot === 'both') {
-        // Automatically assign both dropped files to OLD and NEW
         setOldFileInput({
           name: fileArray[0].name,
           size: fileArray[0].size || 2516582,
@@ -363,7 +348,6 @@ export default function App() {
         setCompareResult(null);
       }
     } else {
-      // Merge mode
       if (fileArray.length >= 3 && slot === 'both') {
         setBaseFileInput({
           name: fileArray[0].name,
@@ -399,7 +383,6 @@ export default function App() {
     }
   };
 
-  // Global keyboard shortcuts (Ctrl+O, Ctrl+Enter, Ctrl+R, Ctrl+S, Esc)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -437,14 +420,15 @@ export default function App() {
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         if (mode === 'compare' && compareResult) {
           e.preventDefault();
-          const html = HtmlReportGenerator.generateComparisonReport(compareResult);
+          const html =
+            HtmlReportGenerator.generateComparisonReport(compareResult);
           triggerDownload('fmb_comparison_report.html', html);
-          showToast('Saved fmb_comparison_report.html');
+          showToast('fmb_comparison_report.html');
         } else if (mode === 'merge' && mergeResult) {
           e.preventDefault();
           const html = HtmlReportGenerator.generateMergeReport(mergeResult);
           triggerDownload('fmb_merge_report.html', html);
-          showToast('Saved fmb_merge_report.html');
+          showToast('fmb_merge_report.html');
         }
       }
     };
@@ -463,9 +447,9 @@ export default function App() {
     runMergeAnalysis,
   ]);
 
-  const formatSize = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  const formatSize = (bytes: number) =>
+    `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
-  // Download sample .fmb files so the user can test real OS drag & drop from their desktop
   const handleDownloadSampleFmbBundle = () => {
     const v1Xml = FmbExtractor.serializeToOracleXml(getCustomerV1Fixture());
     const v2Xml = FmbExtractor.serializeToOracleXml(getCustomerV2Fixture());
@@ -473,8 +457,16 @@ export default function App() {
     setTimeout(() => {
       triggerDownload('customer_v2.fmb', v2Xml, 'application/octet-stream');
     }, 250);
-    showToast('Downloaded customer_v1.fmb and customer_v2.fmb — drag & drop them onto the window!');
+    showToast('customer_v1.fmb + customer_v2.fmb');
   };
+
+  const btnSecondary = isDark
+    ? 'border-[#34363d] bg-[#25272c] text-zinc-200 hover:bg-[#2f3138]'
+    : 'border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100';
+
+  const btnPrimary = isDark
+    ? 'border-zinc-200 bg-zinc-100 text-zinc-950 hover:bg-white'
+    : 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800';
 
   return (
     <div
@@ -496,11 +488,10 @@ export default function App() {
           handleFilesSelected(e.dataTransfer.files, 'both');
         }
       }}
-      className={`min-h-screen flex flex-col transition-colors ${
-        isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
+      className={`h-screen flex flex-col overflow-hidden select-none ${
+        isDark ? 'bg-[#141517] text-zinc-100' : 'bg-zinc-100 text-zinc-900'
       }`}
     >
-      {/* Hidden native file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -517,30 +508,25 @@ export default function App() {
 
       {/* Global Drag & Drop Overlay */}
       {dragOverlayState !== 'none' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-8 pointer-events-none">
-          <div className="w-full max-w-lg rounded-lg border-2 border-dashed border-blue-500 bg-slate-900/90 p-12 text-center">
-            <Upload className="w-10 h-10 text-blue-400 mx-auto mb-3" />
-            <div className="text-lg font-semibold text-white">
-              Drop FMB files here
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 pointer-events-none">
+          <div className="w-full max-w-md border-2 border-dashed border-zinc-300 bg-[#18191c] p-10 text-center">
+            <Upload className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
+            <div className="text-sm font-mono font-semibold text-white">
+              {t.compareHome.dropPrompt}
             </div>
-            <p className="text-xs text-slate-400 mt-1">
-              {mode === 'compare'
-                ? 'Drop one or two .fmb files to assign to OLD and NEW automatically'
-                : 'Drop .fmb files for 3-way merge analysis'}
-            </p>
           </div>
         </div>
       )}
 
-      {/* Top Bar Contract: 3 Zones (1: Single Brand Wordmark, 2: Nav Links, 3: Primary Actions) */}
+      {/* Top Bar Contract: 3 Zones (Zone 1: Single Brand Wordmark, Zone 2: 4 Nav Links, Zone 3: Language + Theme + Sample Action) */}
       <header
-        className={`h-13 px-6 border-b flex items-center justify-between shrink-0 select-none ${
+        className={`h-10 px-4 border-b flex items-center justify-between shrink-0 ${
           isDark
-            ? 'border-slate-800/90 bg-slate-900/90'
-            : 'border-slate-200 bg-white'
+            ? 'border-[#2b2d32] bg-[#1c1d21]'
+            : 'border-zinc-300 bg-zinc-200/80'
         }`}
       >
-        {/* Zone 1: Brand Title (single text element) */}
+        {/* Zone 1: Brand Title */}
         <a
           href="#top"
           onClick={(e) => {
@@ -548,154 +534,171 @@ export default function App() {
             setCompareResult(null);
             setMergeResult(null);
           }}
-          className="text-sm font-bold tracking-tight whitespace-nowrap"
+          className="text-xs font-mono font-bold tracking-tight whitespace-nowrap"
         >
-          FMB Diff &amp; Merge
+          {t.appTitle}
         </a>
 
-        {/* Zone 2: 4 Clean Navigation Links */}
-        <nav className="flex items-center gap-6 text-xs font-medium">
+        {/* Zone 2: Navigation Links */}
+        <nav className="flex items-center gap-5 text-xs font-medium">
           <button
             type="button"
             onClick={() => setMode('compare')}
-            className={`py-1 border-b-2 transition-colors whitespace-nowrap ${
+            className={`py-2.5 border-b-2 transition-colors whitespace-nowrap ${
               mode === 'compare'
-                ? 'border-blue-500 text-blue-400 font-semibold'
+                ? isDark
+                  ? 'border-zinc-100 text-white font-semibold'
+                  : 'border-zinc-900 text-zinc-950 font-semibold'
                 : isDark
-                ? 'border-transparent text-slate-400 hover:text-slate-200'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
+                ? 'border-transparent text-zinc-400 hover:text-zinc-200'
+                : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Compare
+            {t.modes.compare}
           </button>
           <button
             type="button"
             onClick={() => setMode('merge')}
-            className={`py-1 border-b-2 transition-colors whitespace-nowrap ${
+            className={`py-2.5 border-b-2 transition-colors whitespace-nowrap ${
               mode === 'merge'
-                ? 'border-blue-500 text-blue-400 font-semibold'
+                ? isDark
+                  ? 'border-zinc-100 text-white font-semibold'
+                  : 'border-zinc-900 text-zinc-950 font-semibold'
                 : isDark
-                ? 'border-transparent text-slate-400 hover:text-slate-200'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
+                ? 'border-transparent text-zinc-400 hover:text-zinc-200'
+                : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Merge
+            {t.modes.merge}
           </button>
           <button
             type="button"
             onClick={() => setShowTestSuiteModal(true)}
-            className={`py-1 border-b-2 border-transparent transition-colors whitespace-nowrap ${
+            className={`py-2.5 border-b-2 border-transparent transition-colors whitespace-nowrap ${
               isDark
-                ? 'text-slate-400 hover:text-slate-200'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'text-zinc-400 hover:text-zinc-200'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Engine Tests
+            {t.modes.tests}
           </button>
           <button
             type="button"
             onClick={() => setShowToolingModal(true)}
-            className={`py-1 border-b-2 border-transparent transition-colors whitespace-nowrap ${
+            className={`py-2.5 border-b-2 border-transparent transition-colors whitespace-nowrap ${
               isDark
-                ? 'text-slate-400 hover:text-slate-200'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'text-zinc-400 hover:text-zinc-200'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Oracle Tooling
+            {t.modes.tooling}
           </button>
         </nav>
 
-        {/* Zone 3: 2 Primary Actions */}
-        <div className="flex items-center gap-2.5">
+        {/* Zone 3: Language Switcher + Sample Files + Theme Toggle */}
+        <div className="flex items-center gap-2">
+          {/* Native Language Switcher */}
+          <div className="relative flex items-center">
+            <Globe className="w-3.5 h-3.5 text-zinc-400 absolute left-2 pointer-events-none" />
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as LocaleCode)}
+              aria-label={t.toolbar.language}
+              className={`pl-6 pr-5 py-1 text-xs font-mono border outline-none cursor-pointer ${btnSecondary}`}
+            >
+              {SUPPORTED_LOCALES.map((loc) => (
+                <option key={loc.code} value={loc.code}>
+                  {loc.label} · {loc.nativeName}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
             type="button"
             onClick={handleDownloadSampleFmbBundle}
-            title="Download sample customer_v1.fmb and customer_v2.fmb files to test desktop drag & drop"
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap ${
-              isDark
-                ? 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
-                : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border transition-colors whitespace-nowrap ${btnSecondary}`}
           >
             <Download className="w-3.5 h-3.5" />
-            Sample .fmb Files
+            {t.toolbar.sampleFiles}
           </button>
 
           <button
             type="button"
             onClick={() => setIsDark((prev) => !prev)}
             aria-label="Toggle color theme"
-            className={`p-1.5 rounded border transition-colors ${
-              isDark
-                ? 'border-slate-800 bg-slate-800/60 text-slate-300 hover:text-white'
-                : 'border-slate-200 bg-slate-100 text-slate-700 hover:text-slate-900'
-            }`}
+            className={`p-1 border transition-colors ${btnSecondary}`}
           >
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {isDark ? (
+              <Sun className="w-3.5 h-3.5" />
+            ) : (
+              <Moon className="w-3.5 h-3.5" />
+            )}
           </button>
         </div>
       </header>
 
-      {/* Optional Toast Notification */}
       {inlineToast && (
-        <div className="fixed bottom-4 right-4 z-40 px-4 py-2.5 rounded-md border border-blue-500/40 bg-slate-900 text-xs text-blue-200 shadow-lg">
-          {inlineToast}
+        <div className="fixed bottom-3 right-3 z-40 px-3 py-1.5 border border-zinc-500 bg-[#18191c] text-xs font-mono text-zinc-100 shadow-lg">
+          ✓ {inlineToast}
         </div>
       )}
 
-      {/* Main Viewport */}
-      <div className="flex-1 flex flex-col min-h-0">
+      {/* Main Desktop Workbench Area */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
         {progress ? (
-          /* Meaningful Non-Blocking Progress State (Section 5) */
+          /* Utilitarian Desktop Progress Dialog (Section 5) */
           <div className="flex-1 flex items-center justify-center p-6">
             <div
-              className={`w-full max-w-md rounded-lg border p-6 ${
+              className={`w-full max-w-md border p-5 ${
                 isDark
-                  ? 'border-slate-800 bg-slate-900/60'
-                  : 'border-slate-200 bg-white'
+                  ? 'border-[#2e3036] bg-[#18191c]'
+                  : 'border-zinc-300 bg-white'
               }`}
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold">{progress.title}</span>
-                <span className="font-mono text-sm font-bold text-blue-400 tabular-nums">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-mono font-semibold">
+                  {progress.title}
+                </span>
+                <span className="font-mono text-xs font-bold tabular-nums">
                   {progress.percent}%
                 </span>
               </div>
 
               <div
-                className={`w-full h-1.5 rounded-full overflow-hidden mb-5 ${
-                  isDark ? 'bg-slate-800' : 'bg-slate-200'
+                className={`w-full h-1.5 overflow-hidden mb-4 ${
+                  isDark ? 'bg-[#26282d]' : 'bg-zinc-200'
                 }`}
               >
                 <div
-                  className="h-full bg-blue-500 transition-transform duration-150 origin-left"
+                  className={`h-full transition-transform duration-150 origin-left ${
+                    isDark ? 'bg-zinc-200' : 'bg-zinc-800'
+                  }`}
                   style={{ transform: `scaleX(${progress.percent / 100})` }}
                 />
               </div>
 
-              <div className="space-y-2.5 text-xs font-mono">
+              <div className="space-y-1.5 text-xs font-mono">
                 {progress.steps.map((step, idx) => (
-                  <div key={idx} className="flex items-center gap-2.5">
+                  <div key={idx} className="flex items-center gap-2">
                     {step.state === 'done' && (
                       <span className="text-emerald-400 font-bold">✓</span>
                     )}
                     {step.state === 'active' && (
-                      <span className="text-blue-400 font-bold animate-pulse">
-                        ●
-                      </span>
+                      <span className="text-amber-400 font-bold">●</span>
                     )}
                     {step.state === 'pending' && (
-                      <span className="text-slate-600">○</span>
+                      <span className="text-zinc-600">○</span>
                     )}
                     <span
                       className={
                         step.state === 'done'
                           ? isDark
-                            ? 'text-slate-300'
-                            : 'text-slate-700'
+                            ? 'text-zinc-300'
+                            : 'text-zinc-700'
                           : step.state === 'active'
-                          ? 'text-blue-400 font-semibold'
-                          : 'text-slate-500'
+                          ? 'font-semibold'
+                          : 'text-zinc-500'
                       }
                     >
                       {step.label}
@@ -706,7 +709,6 @@ export default function App() {
             </div>
           </div>
         ) : mode === 'compare' && compareResult ? (
-          /* Compare Results Screen */
           <CompareWorkspace
             result={compareResult}
             isDark={isDark}
@@ -725,7 +727,7 @@ export default function App() {
               const html =
                 HtmlReportGenerator.generateComparisonReport(compareResult);
               setReportPreview({
-                title: `Comparison Report: ${compareResult.oldModel.metadata.fileName} → ${compareResult.newModel.metadata.fileName}`,
+                title: `${compareResult.oldModel.metadata.fileName} → ${compareResult.newModel.metadata.fileName}`,
                 html,
                 fileName: 'fmb_comparison_report.html',
               });
@@ -734,11 +736,10 @@ export default function App() {
               const html =
                 HtmlReportGenerator.generateComparisonReport(compareResult);
               triggerDownload('fmb_comparison_report.html', html);
-              showToast('Exported fmb_comparison_report.html');
+              showToast('fmb_comparison_report.html');
             }}
           />
         ) : mode === 'merge' && mergeResult ? (
-          /* 3-Way Merge Results & Conflict Resolution Screen */
           <MergeWorkspace
             result={mergeResult}
             isDark={isDark}
@@ -784,7 +785,7 @@ export default function App() {
             onPreviewMergeReport={() => {
               const html = HtmlReportGenerator.generateMergeReport(mergeResult);
               setReportPreview({
-                title: `3-Way Merge Report: ${mergeResult.outputFileName}`,
+                title: `${mergeResult.outputFileName}`,
                 html,
                 fileName: 'fmb_merge_report.html',
               });
@@ -792,446 +793,456 @@ export default function App() {
             onExportMergeReport={() => {
               const html = HtmlReportGenerator.generateMergeReport(mergeResult);
               triggerDownload('fmb_merge_report.html', html);
-              showToast('Exported fmb_merge_report.html');
+              showToast('fmb_merge_report.html');
             }}
             onResetFiles={() => setMergeResult(null)}
           />
         ) : (
-          /* Main Application Experience (Home Dropzone & File Selection — Section 3 & 4) */
+          /* Desktop Session Setup View (Section 3 & 4) — Crisp utilitarian layout */
           <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-2xl">
-              {/* Mode Switch Tabs matching Section 3 diagram */}
-              <div className="flex items-center gap-8 border-b border-slate-800 mb-6">
+            <div
+              className={`w-full max-w-2xl border ${
+                isDark
+                  ? 'border-[#2e3036] bg-[#18191c]'
+                  : 'border-zinc-300 bg-white'
+              }`}
+            >
+              {/* Window Subheader Tabs: Compare | Merge */}
+              <div
+                className={`flex items-center gap-6 px-5 border-b ${
+                  isDark
+                    ? 'border-[#2e3036] bg-[#1e1f23]'
+                    : 'border-zinc-300 bg-zinc-100'
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => setMode('compare')}
-                  className={`pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+                  className={`py-2.5 text-xs font-mono font-semibold border-b-2 transition-colors ${
                     mode === 'compare'
-                      ? 'border-blue-500 text-blue-400'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                      ? isDark
+                        ? 'border-zinc-100 text-white'
+                        : 'border-zinc-900 text-zinc-950'
+                      : 'border-transparent text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <GitCompare className="w-4 h-4" />
-                  Compare
+                  {t.modes.compare}
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode('merge')}
-                  className={`pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+                  className={`py-2.5 text-xs font-mono font-semibold border-b-2 transition-colors ${
                     mode === 'merge'
-                      ? 'border-blue-500 text-blue-400'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                      ? isDark
+                        ? 'border-zinc-100 text-white'
+                        : 'border-zinc-900 text-zinc-950'
+                      : 'border-transparent text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <GitMerge className="w-4 h-4" />
-                  Merge
+                  {t.modes.merge}
                 </button>
               </div>
 
-              {mode === 'compare' ? (
-                /* COMPARE HOME */
-                <div>
-                  <h1 className="text-xl font-semibold tracking-tight mb-1">
-                    Compare two FMB files
-                  </h1>
-                  <p className="text-xs text-slate-400 mb-6">
-                    Understand exactly what changed across blocks, items, properties, triggers, and PL/SQL program units.
-                  </p>
+              <div className="p-6">
+                {mode === 'compare' ? (
+                  <div>
+                    <h1 className="text-base font-semibold tracking-tight mb-1">
+                      {t.compareHome.title}
+                    </h1>
+                    <p className="text-xs text-zinc-400 mb-5">
+                      {t.compareHome.subtitle}
+                    </p>
 
-                  {/* Primary Dropzone */}
-                  <div
-                    onClick={() => {
-                      setPendingSlot('both');
-                      fileInputRef.current?.click();
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
+                    {/* Utilitarian Drop Target */}
+                    <div
+                      onClick={() => {
                         setPendingSlot('both');
                         fileInputRef.current?.click();
-                      }
-                    }}
-                    className={`rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-colors ${
-                      isDark
-                        ? 'border-slate-800 bg-slate-900/40 hover:border-blue-500/60 hover:bg-slate-900/70'
-                        : 'border-slate-300 bg-white hover:border-blue-500'
-                    }`}
-                  >
-                    <Upload className="w-7 h-7 text-slate-400 mx-auto mb-2.5" />
-                    <div className="text-sm font-medium mb-1">
-                      Drop FMB files here
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setPendingSlot('both');
+                          fileInputRef.current?.click();
+                        }
+                      }}
+                      className={`border border-dashed p-7 text-center cursor-pointer transition-colors ${
+                        isDark
+                          ? 'border-[#3a3d45] bg-[#141517] hover:border-zinc-400'
+                          : 'border-zinc-400 bg-zinc-50 hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="text-xs font-mono font-semibold mb-1.5">
+                        {t.compareHome.dropPrompt}
+                      </div>
+                      <div className="text-[11px] text-zinc-500 mb-3">
+                        {t.compareHome.orText}
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1 text-xs font-medium border ${btnSecondary}`}
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" />
+                        {t.compareHome.selectFilesBtn}
+                      </span>
                     </div>
-                    <div className="text-xs text-slate-500 mb-4">or</div>
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded border ${
-                        isDark
-                          ? 'border-slate-700 bg-slate-800 text-slate-200'
-                          : 'border-slate-300 bg-slate-100 text-slate-800'
-                      }`}
-                    >
-                      <FolderOpen className="w-3.5 h-3.5" />
-                      Select files
-                    </span>
-                  </div>
 
-                  {/* Selected OLD and NEW File Slots (Section 4) */}
-                  {oldFileInput && newFileInput ? (
-                    <div
-                      className={`mt-5 rounded-lg border p-4 ${
-                        isDark
-                          ? 'border-slate-800 bg-slate-900/60'
-                          : 'border-slate-200 bg-white'
-                      }`}
-                    >
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    {/* OLD and NEW File Table */}
+                    {oldFileInput && newFileInput ? (
+                      <div
+                        className={`mt-4 border ${
+                          isDark
+                            ? 'border-[#2e3036] bg-[#141517]'
+                            : 'border-zinc-300 bg-zinc-50'
+                        }`}
+                      >
                         <div
-                          className={`p-3 rounded border flex items-center justify-between ${
-                            isDark
-                              ? 'border-slate-800 bg-slate-950/60'
-                              : 'border-slate-200 bg-slate-50'
+                          className={`grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x ${
+                            isDark ? 'divide-[#2e3036]' : 'divide-zinc-300'
                           }`}
                         >
-                          <div>
-                            <div className="text-[11px] font-mono font-semibold text-slate-400">
-                              OLD
+                          <div className="p-3 flex items-center justify-between">
+                            <div>
+                              <div className="text-[10px] font-mono font-bold text-zinc-400">
+                                {t.compareHome.oldLabel}
+                              </div>
+                              <div className="font-mono text-xs font-semibold mt-0.5">
+                                {oldFileInput.name}
+                              </div>
+                              <div className="text-[11px] font-mono text-zinc-500 tabular-nums">
+                                {formatSize(oldFileInput.size)}
+                              </div>
                             </div>
-                            <div className="font-mono text-xs font-semibold mt-0.5">
-                              {oldFileInput.name}
-                            </div>
-                            <div className="text-[11px] text-slate-500 tabular-nums">
-                              {formatSize(oldFileInput.size)}
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPendingSlot('old');
+                                fileInputRef.current?.click();
+                              }}
+                              className={`px-2 py-1 text-[11px] font-mono border ${btnSecondary}`}
+                            >
+                              {t.compareHome.changeFileBtn}
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPendingSlot('old');
-                              fileInputRef.current?.click();
-                            }}
-                            className="text-xs text-blue-400 hover:underline"
-                          >
-                            Change
-                          </button>
+
+                          <div className="p-3 flex items-center justify-between">
+                            <div>
+                              <div className="text-[10px] font-mono font-bold text-zinc-300">
+                                {t.compareHome.newLabel}
+                              </div>
+                              <div className="font-mono text-xs font-semibold mt-0.5">
+                                {newFileInput.name}
+                              </div>
+                              <div className="text-[11px] font-mono text-zinc-500 tabular-nums">
+                                {formatSize(newFileInput.size)}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPendingSlot('new');
+                                fileInputRef.current?.click();
+                              }}
+                              className={`px-2 py-1 text-[11px] font-mono border ${btnSecondary}`}
+                            >
+                              {t.compareHome.changeFileBtn}
+                            </button>
+                          </div>
                         </div>
 
                         <div
-                          className={`p-3 rounded border flex items-center justify-between ${
+                          className={`px-3 py-2.5 border-t flex items-center justify-between ${
                             isDark
-                              ? 'border-slate-800 bg-slate-950/60'
-                              : 'border-slate-200 bg-slate-50'
+                              ? 'border-[#2e3036] bg-[#1c1d21]'
+                              : 'border-zinc-300 bg-zinc-100'
                           }`}
                         >
-                          <div>
-                            <div className="text-[11px] font-mono font-semibold text-blue-400">
-                              NEW
-                            </div>
-                            <div className="font-mono text-xs font-semibold mt-0.5">
-                              {newFileInput.name}
-                            </div>
-                            <div className="text-[11px] text-slate-500 tabular-nums">
-                              {formatSize(newFileInput.size)}
-                            </div>
-                          </div>
+                          <span className="text-xs font-mono text-zinc-400">
+                            ✓ {t.compareHome.filesReadyStatus}
+                          </span>
                           <button
                             type="button"
-                            onClick={() => {
-                              setPendingSlot('new');
-                              fileInputRef.current?.click();
-                            }}
-                            className="text-xs text-blue-400 hover:underline"
+                            onClick={() => runComparison()}
+                            className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border transition-colors ${btnPrimary}`}
                           >
-                            Change
+                            <Play className="w-3 h-3 fill-current" />
+                            {t.compareHome.compareBtn}
                           </button>
                         </div>
                       </div>
+                    ) : (
+                      <div className="mt-4 text-center text-xs text-zinc-500">
+                        {t.compareHome.emptyPrompt}
+                      </div>
+                    )}
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-400">
-                          ✓ Both FMB files validated and ready
-                        </span>
+                    {/* Quick Test Fixtures Strip */}
+                    <div
+                      className={`mt-5 pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs font-mono ${
+                        isDark ? 'border-[#2e3036]' : 'border-zinc-200'
+                      }`}
+                    >
+                      <span className="text-zinc-500">
+                        {t.compareHome.presetsTitle}
+                      </span>
+                      <div className="flex flex-wrap items-center gap-2.5">
                         <button
                           type="button"
-                          onClick={() => runComparison()}
-                          className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors"
+                          onClick={() => {
+                            const v1: FmbFileInput = {
+                              name: 'customer_v1.fmb',
+                              size: 2516582,
+                              presetRole: 'v1',
+                            };
+                            const v2: FmbFileInput = {
+                              name: 'customer_v2.fmb',
+                              size: 2726297,
+                              presetRole: 'v2',
+                            };
+                            setOldFileInput(v1);
+                            setNewFileInput(v2);
+                            runComparison(v1, v2);
+                          }}
+                          className="underline hover:text-zinc-200"
                         >
-                          <Play className="w-3.5 h-3.5 fill-current" />
-                          Compare files
+                          {t.compareHome.presetStandard}
+                        </button>
+                        <span className="text-zinc-600">·</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const v1: FmbFileInput = {
+                              name: 'customer_v1.fmb',
+                              size: 2516582,
+                              presetRole: 'v1',
+                            };
+                            const v1Copy: FmbFileInput = {
+                              name: 'customer_v1_copy.fmb',
+                              size: 2516582,
+                              presetRole: 'identical',
+                            };
+                            setOldFileInput(v1);
+                            setNewFileInput(v1Copy);
+                            runComparison(v1, v1Copy);
+                          }}
+                          className="text-zinc-400 underline hover:text-zinc-200"
+                        >
+                          {t.compareHome.presetIdentical}
+                        </button>
+                        <span className="text-zinc-600">·</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const bad: FmbFileInput = {
+                              name: 'corrupted_locked.fmb',
+                              size: 0,
+                            };
+                            const v2: FmbFileInput = {
+                              name: 'customer_v2.fmb',
+                              size: 2726297,
+                              presetRole: 'v2',
+                            };
+                            runComparison(bad, v2);
+                          }}
+                          className="text-zinc-400 underline hover:text-zinc-200"
+                        >
+                          {t.compareHome.presetCorrupted}
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="mt-4 text-center text-xs text-slate-500">
-                      Select two FMB files to start a comparison.
-                    </div>
-                  )}
-
-                  {/* Quick Developer Presets for testing all states */}
-                  <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <span className="text-slate-500">Quick test scenarios:</span>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const v1: FmbFileInput = {
-                            name: 'customer_v1.fmb',
-                            size: 2516582,
-                            presetRole: 'v1',
-                          };
-                          const v2: FmbFileInput = {
-                            name: 'customer_v2.fmb',
-                            size: 2726297,
-                            presetRole: 'v2',
-                          };
-                          setOldFileInput(v1);
-                          setNewFileInput(v2);
-                          runComparison(v1, v2);
-                        }}
-                        className="text-blue-400 hover:underline font-medium"
-                      >
-                        customer_v1 → customer_v2 (Standard Diff)
-                      </button>
-                      <span className="text-slate-700">·</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const v1: FmbFileInput = {
-                            name: 'customer_v1.fmb',
-                            size: 2516582,
-                            presetRole: 'v1',
-                          };
-                          const v1Copy: FmbFileInput = {
-                            name: 'customer_v1_copy.fmb',
-                            size: 2516582,
-                            presetRole: 'identical',
-                          };
-                          setOldFileInput(v1);
-                          setNewFileInput(v1Copy);
-                          runComparison(v1, v1Copy);
-                        }}
-                        className="text-slate-400 hover:text-slate-200 hover:underline"
-                      >
-                        Identical FMBs (Empty Diff State)
-                      </button>
-                      <span className="text-slate-700">·</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const bad: FmbFileInput = {
-                            name: 'corrupted_locked.fmb',
-                            size: 0,
-                          };
-                          const v2: FmbFileInput = {
-                            name: 'customer_v2.fmb',
-                            size: 2726297,
-                            presetRole: 'v2',
-                          };
-                          runComparison(bad, v2);
-                        }}
-                        className="text-slate-400 hover:text-slate-200 hover:underline"
-                      >
-                        Locked / Corrupted FMB Error
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ) : (
-                /* MERGE HOME (Section 11) */
-                <div>
-                  <h1 className="text-xl font-semibold tracking-tight mb-1">
-                    3-Way Merge FMB versions
-                  </h1>
-                  <p className="text-xs text-slate-400 mb-6">
-                    Safely combine changes from Ours and Theirs relative to a common Base ancestor with automatic conflict detection.
-                  </p>
+                ) : (
+                  /* MERGE SETUP */
+                  <div>
+                    <h1 className="text-base font-semibold tracking-tight mb-1">
+                      {t.mergeHome.title}
+                    </h1>
+                    <p className="text-xs text-zinc-400 mb-5">
+                      {t.mergeHome.subtitle}
+                    </p>
 
-                  <div
-                    className={`rounded-lg border p-5 ${
-                      isDark
-                        ? 'border-slate-800 bg-slate-900/60'
-                        : 'border-slate-200 bg-white'
-                    }`}
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-5">
-                      {/* BASE */}
+                    <div
+                      className={`border ${
+                        isDark
+                          ? 'border-[#2e3036] bg-[#141517]'
+                          : 'border-zinc-300 bg-zinc-50'
+                      }`}
+                    >
                       <div
-                        className={`p-3.5 rounded border ${
-                          isDark
-                            ? 'border-slate-800 bg-slate-950/60'
-                            : 'border-slate-200 bg-slate-50'
+                        className={`grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x ${
+                          isDark ? 'divide-[#2e3036]' : 'divide-zinc-300'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-[11px] font-bold text-slate-400">
-                            BASE (Common Ancestor)
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPendingSlot('base');
-                              fileInputRef.current?.click();
-                            }}
-                            className="text-[11px] text-blue-400 hover:underline"
-                          >
-                            Select
-                          </button>
-                        </div>
-                        <div className="font-mono text-xs font-semibold truncate">
-                          {baseFileInput?.name || 'Not selected'}
-                        </div>
-                        {baseFileInput && (
-                          <div className="text-[11px] text-slate-500 tabular-nums mt-0.5">
-                            {formatSize(baseFileInput.size)}
+                        <div className="p-3.5">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-mono text-[10px] font-bold text-zinc-400">
+                              {t.mergeHome.baseLabel}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPendingSlot('base');
+                                fileInputRef.current?.click();
+                              }}
+                              className="text-[11px] font-mono underline text-zinc-300"
+                            >
+                              {t.mergeHome.selectBtn}
+                            </button>
                           </div>
-                        )}
+                          <div className="font-mono text-xs font-semibold truncate">
+                            {baseFileInput?.name || '—'}
+                          </div>
+                          {baseFileInput && (
+                            <div className="text-[11px] font-mono text-zinc-500 tabular-nums mt-0.5">
+                              {formatSize(baseFileInput.size)}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="p-3.5">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-mono text-[10px] font-bold text-sky-400">
+                              {t.mergeHome.oursLabel}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPendingSlot('ours');
+                                fileInputRef.current?.click();
+                              }}
+                              className="text-[11px] font-mono underline text-zinc-300"
+                            >
+                              {t.mergeHome.selectBtn}
+                            </button>
+                          </div>
+                          <div className="font-mono text-xs font-semibold truncate">
+                            {oursFileInput?.name || '—'}
+                          </div>
+                          {oursFileInput && (
+                            <div className="text-[11px] font-mono text-zinc-500 tabular-nums mt-0.5">
+                              {formatSize(oursFileInput.size)}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="p-3.5">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-mono text-[10px] font-bold text-amber-400">
+                              {t.mergeHome.theirsLabel}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPendingSlot('theirs');
+                                fileInputRef.current?.click();
+                              }}
+                              className="text-[11px] font-mono underline text-zinc-300"
+                            >
+                              {t.mergeHome.selectBtn}
+                            </button>
+                          </div>
+                          <div className="font-mono text-xs font-semibold truncate">
+                            {theirsFileInput?.name || '—'}
+                          </div>
+                          {theirsFileInput && (
+                            <div className="text-[11px] font-mono text-zinc-500 tabular-nums mt-0.5">
+                              {formatSize(theirsFileInput.size)}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      {/* OURS */}
                       <div
-                        className={`p-3.5 rounded border ${
+                        className={`px-3.5 py-2.5 border-t flex items-center justify-between ${
                           isDark
-                            ? 'border-blue-900/40 bg-blue-950/15'
-                            : 'border-blue-200 bg-blue-50/40'
+                            ? 'border-[#2e3036] bg-[#1c1d21]'
+                            : 'border-zinc-300 bg-zinc-100'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-[11px] font-bold text-blue-400">
-                            OURS (Current Branch)
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPendingSlot('ours');
-                              fileInputRef.current?.click();
-                            }}
-                            className="text-[11px] text-blue-400 hover:underline"
-                          >
-                            Select
-                          </button>
-                        </div>
-                        <div className="font-mono text-xs font-semibold truncate">
-                          {oursFileInput?.name || 'Not selected'}
-                        </div>
-                        {oursFileInput && (
-                          <div className="text-[11px] text-slate-500 tabular-nums mt-0.5">
-                            {formatSize(oursFileInput.size)}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* THEIRS */}
-                      <div
-                        className={`p-3.5 rounded border ${
-                          isDark
-                            ? 'border-purple-900/40 bg-purple-950/15'
-                            : 'border-purple-200 bg-purple-50/40'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-[11px] font-bold text-purple-400">
-                            THEIRS (Incoming Branch)
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPendingSlot('theirs');
-                              fileInputRef.current?.click();
-                            }}
-                            className="text-[11px] text-blue-400 hover:underline"
-                          >
-                            Select
-                          </button>
-                        </div>
-                        <div className="font-mono text-xs font-semibold truncate">
-                          {theirsFileInput?.name || 'Not selected'}
-                        </div>
-                        {theirsFileInput && (
-                          <div className="text-[11px] text-slate-500 tabular-nums mt-0.5">
-                            {formatSize(theirsFileInput.size)}
-                          </div>
-                        )}
+                        <span className="text-xs font-mono text-zinc-400">
+                          ✓ {t.mergeHome.readyStatus}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => runMergeAnalysis()}
+                          className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border transition-colors ${btnPrimary}`}
+                        >
+                          <Play className="w-3 h-3 fill-current" />
+                          {t.mergeHome.analyzeMergeBtn}
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-400">
-                        ✓ Base, Ours, and Theirs modules ready for 3-way analysis
+                    <div
+                      className={`mt-5 pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs font-mono ${
+                        isDark ? 'border-[#2e3036]' : 'border-zinc-200'
+                      }`}
+                    >
+                      <span className="text-zinc-500">
+                        {t.mergeHome.presetsTitle}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => runMergeAnalysis()}
-                        className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors"
-                      >
-                        <GitMerge className="w-3.5 h-3.5" />
-                        Analyze merge
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const b: FmbFileInput = {
+                              name: 'customer_base.fmb',
+                              size: 2485120,
+                              presetRole: 'base',
+                            };
+                            const o: FmbFileInput = {
+                              name: 'customer_ours.fmb',
+                              size: 2641920,
+                              presetRole: 'ours',
+                            };
+                            const th: FmbFileInput = {
+                              name: 'customer_theirs.fmb',
+                              size: 2610400,
+                              presetRole: 'theirs',
+                            };
+                            setBaseFileInput(b);
+                            setOursFileInput(o);
+                            setTheirsFileInput(th);
+                            runMergeAnalysis(b, o, th);
+                          }}
+                          className="underline hover:text-zinc-200"
+                        >
+                          {t.mergeHome.presetConflicts}
+                        </button>
+                        <span className="text-zinc-600">·</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const b: FmbFileInput = {
+                              name: 'customer_base.fmb',
+                              size: 2485120,
+                              presetRole: 'base',
+                            };
+                            const o: FmbFileInput = {
+                              name: 'customer_ours.fmb',
+                              size: 2641920,
+                              presetRole: 'ours',
+                            };
+                            const tClean: FmbFileInput = {
+                              name: 'customer_theirs_clean.fmb',
+                              size: 2485120,
+                              presetRole: 'base',
+                            };
+                            setBaseFileInput(b);
+                            setOursFileInput(o);
+                            setTheirsFileInput(tClean);
+                            runMergeAnalysis(b, o, tClean);
+                          }}
+                          className="text-zinc-400 underline hover:text-zinc-200"
+                        >
+                          {t.mergeHome.presetClean}
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Quick Merge Test Scenarios */}
-                  <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <span className="text-slate-500">Quick merge scenarios:</span>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const b: FmbFileInput = {
-                            name: 'customer_base.fmb',
-                            size: 2485120,
-                            presetRole: 'base',
-                          };
-                          const o: FmbFileInput = {
-                            name: 'customer_ours.fmb',
-                            size: 2641920,
-                            presetRole: 'ours',
-                          };
-                          const t: FmbFileInput = {
-                            name: 'customer_theirs.fmb',
-                            size: 2610400,
-                            presetRole: 'theirs',
-                          };
-                          setBaseFileInput(b);
-                          setOursFileInput(o);
-                          setTheirsFileInput(t);
-                          runMergeAnalysis(b, o, t);
-                        }}
-                        className="text-blue-400 hover:underline font-medium"
-                      >
-                        3-Way Merge with 4 Conflicts
-                      </button>
-                      <span className="text-slate-700">·</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const b: FmbFileInput = {
-                            name: 'customer_base.fmb',
-                            size: 2485120,
-                            presetRole: 'base',
-                          };
-                          const o: FmbFileInput = {
-                            name: 'customer_ours.fmb',
-                            size: 2641920,
-                            presetRole: 'ours',
-                          };
-                          const tClean: FmbFileInput = {
-                            name: 'customer_theirs_clean.fmb',
-                            size: 2485120,
-                            presetRole: 'base',
-                          };
-                          setBaseFileInput(b);
-                          setOursFileInput(o);
-                          setTheirsFileInput(tClean);
-                          runMergeAnalysis(b, o, tClean);
-                        }}
-                        className="text-slate-400 hover:text-slate-200 hover:underline"
-                      >
-                        Conflict-Free Auto Merge (0 Conflicts)
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -1265,13 +1276,10 @@ export default function App() {
               new FmbExtractionError({
                 code: 'MISSING_ORACLE_TOOLING',
                 fileName: 'customer_v1.fmb',
-                message: 'Oracle Forms tooling was not found.',
+                message: t.modals.errorMissingToolingTitle,
                 technicalDetails:
                   'Spawn ENOENT: C:\\Oracle\\Middleware\\Oracle_Home\\...\\frmf2xml.bat not found on PATH or ORACLE_HOME.',
-                remediationSteps: [
-                  'Configure ORACLE_HOME path',
-                  'Or supply pre-extracted *_fmb.xml files',
-                ],
+                remediationSteps: ['Configure ORACLE_HOME path'],
               })
             );
           }}
@@ -1294,10 +1302,18 @@ export default function App() {
           onClose={() => setReportPreview(null)}
           onDownload={() => {
             triggerDownload(reportPreview.fileName, reportPreview.html);
-            showToast(`Saved ${reportPreview.fileName}`);
+            showToast(reportPreview.fileName);
           }}
         />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <I18nProvider>
+      <FmbDesktopWorkbench />
+    </I18nProvider>
   );
 }

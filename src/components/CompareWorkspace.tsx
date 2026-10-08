@@ -17,6 +17,7 @@ import {
   ObjectDiffEntry,
 } from '../diff/diff-models';
 import { FmbObjectType } from '../fmb/models/fmb-models';
+import { useI18n } from '../i18n/translations';
 import { SplitSourceDiff } from './SplitSourceDiff';
 
 interface CompareWorkspaceProps {
@@ -32,18 +33,6 @@ interface CompareWorkspaceProps {
 type StatusFilter = 'CHANGES_ONLY' | 'ALL' | 'ADDED' | 'REMOVED' | 'MODIFIED';
 type TypeFilter = 'ALL' | FmbObjectType;
 
-const OBJECT_TYPE_LABELS: Array<{ value: TypeFilter; label: string }> = [
-  { value: 'ALL', label: 'All Object Types' },
-  { value: 'BLOCK', label: 'Blocks' },
-  { value: 'ITEM', label: 'Items' },
-  { value: 'TRIGGER', label: 'Triggers' },
-  { value: 'PROGRAM_UNIT', label: 'Program Units' },
-  { value: 'CANVAS', label: 'Canvases' },
-  { value: 'WINDOW', label: 'Windows' },
-  { value: 'LOV', label: 'LOVs' },
-  { value: 'RECORD_GROUP', label: 'Record Groups' },
-];
-
 export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
   result,
   isDark,
@@ -53,13 +42,13 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
   onExportHtmlReport,
   onPreviewHtmlReport,
 }) => {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('CHANGES_ONLY');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [selectedTreeNode, setSelectedTreeNode] = useState<string>('ALL');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [expandedObjects, setExpandedObjects] = useState<Record<string, boolean>>(() => {
-    // Expand the first trigger/program unit with source diff by default so split view is immediately discoverable
     const initial: Record<string, boolean> = {};
     const firstTrigger = result.objectDiffs.find(
       (o) => o.status === 'MODIFIED' && o.sourceDiff
@@ -73,15 +62,25 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
   const [showDevJsonFor, setShowDevJsonFor] = useState<Record<string, boolean>>({});
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const objectTypeOptions: Array<{ value: TypeFilter; label: string }> = [
+    { value: 'ALL', label: t.filters.allTypes },
+    { value: 'BLOCK', label: t.filters.blocks },
+    { value: 'ITEM', label: t.filters.items },
+    { value: 'TRIGGER', label: t.filters.triggers },
+    { value: 'PROGRAM_UNIT', label: t.filters.programUnits },
+    { value: 'CANVAS', label: t.filters.canvases },
+    { value: 'WINDOW', label: t.filters.windows },
+    { value: 'LOV', label: t.filters.lovs },
+    { value: 'RECORD_GROUP', label: t.filters.recordGroups },
+  ];
+
   const totalChanges =
     result.summary.added + result.summary.removed + result.summary.modified;
 
-  // Filtered objects
   const filteredObjects = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
     return result.objectDiffs.filter((obj) => {
-      // Status filter
       if (statusFilter === 'CHANGES_ONLY' && obj.status === 'UNCHANGED') {
         return false;
       }
@@ -94,12 +93,10 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
         return false;
       }
 
-      // Object type filter
       if (typeFilter !== 'ALL' && obj.type !== typeFilter) {
         return false;
       }
 
-      // Tree navigation node filter
       if (selectedTreeNode !== 'ALL') {
         if (selectedTreeNode.startsWith('CATEGORY:')) {
           const catType = selectedTreeNode.replace('CATEGORY:', '');
@@ -115,7 +112,6 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
         }
       }
 
-      // Search query
       if (q) {
         const matchesName =
           obj.name.toLowerCase().includes(q) ||
@@ -139,7 +135,6 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
     });
   }, [result.objectDiffs, searchQuery, statusFilter, typeFilter, selectedTreeNode]);
 
-  // Group filtered objects by groupKey (e.g. CUSTOMER, ADDRESS, TRIGGERS, PROGRAM UNITS)
   const groupedSections = useMemo(() => {
     const groups = new Map<
       string,
@@ -160,21 +155,14 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
     return Array.from(groups.values());
   }, [filteredObjects]);
 
-  // Build hierarchical Object Tree for left sidebar
   const treeSummary = useMemo(() => {
     const countChanges = (predicate: (o: ObjectDiffEntry) => boolean) => {
       const matching = result.objectDiffs.filter(predicate);
       const changed = matching.filter((o) => o.status !== 'UNCHANGED');
-      const hasAdded = changed.some((o) => o.status === 'ADDED');
-      const hasRemoved = changed.some((o) => o.status === 'REMOVED');
-      const hasModified = changed.some((o) => o.status === 'MODIFIED');
       return {
         total: matching.length,
         changedCount: changed.length,
         allAdded: changed.length > 0 && changed.every((o) => o.status === 'ADDED'),
-        hasAdded,
-        hasRemoved,
-        hasModified,
       };
     };
 
@@ -206,7 +194,6 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
     };
   }, [result.objectDiffs]);
 
-  // Keyboard shortcuts (Ctrl+F, ↑/↓, Enter)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
@@ -256,7 +243,7 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
               isDark ? 'text-emerald-400' : 'text-emerald-700'
             }`}
           >
-            + Added
+            + {t.summary.added}
           </span>
         );
       case 'REMOVED':
@@ -266,7 +253,7 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
               isDark ? 'text-rose-400' : 'text-rose-700'
             }`}
           >
-            − Removed
+            − {t.summary.removed}
           </span>
         );
       case 'MODIFIED':
@@ -276,13 +263,13 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
               isDark ? 'text-amber-400' : 'text-amber-700'
             }`}
           >
-            ● Modified
+            ● {t.summary.modified}
           </span>
         );
       default:
         return (
-          <span className="font-mono text-xs text-slate-500 whitespace-nowrap">
-            ✓ Unchanged
+          <span className="font-mono text-xs text-zinc-500 whitespace-nowrap">
+            ✓ {t.summary.unchanged}
           </span>
         );
     }
@@ -290,127 +277,115 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
 
   const formatBytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
+  const btnClass = isDark
+    ? 'border-[#34363d] bg-[#25272c] text-zinc-200 hover:bg-[#2f3138]'
+    : 'border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100';
+
   return (
     <div className="flex flex-col h-full">
-      {/* Top Comparison Context & Summary Bar */}
+      {/* Desktop Dual Path Bar & Summary Strip (Beyond Compare / Sublime Merge style) */}
       <div
-        className={`px-6 py-3.5 border-b ${
-          isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'
+        className={`px-4 py-2 border-b ${
+          isDark ? 'border-[#2b2d32] bg-[#1e1f23]' : 'border-zinc-300 bg-zinc-100'
         }`}
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="text-xs text-slate-500 font-medium mb-0.5">
-              Comparison · Module {result.newModel.metadata.moduleName} (Forms{' '}
-              {result.newModel.metadata.formsVersion})
-            </div>
-            <div className="flex items-center gap-2.5 text-sm font-semibold">
-              <span className="font-mono">{result.oldModel.metadata.fileName}</span>
-              <span className="text-xs font-normal text-slate-500 tabular-nums">
-                ({formatBytes(result.oldModel.metadata.fileSize)})
-              </span>
-              <span className="text-slate-500">→</span>
-              <span className="font-mono">{result.newModel.metadata.fileName}</span>
-              <span className="text-xs font-normal text-slate-500 tabular-nums">
-                ({formatBytes(result.newModel.metadata.fileSize)})
-              </span>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* File comparison path header */}
+          <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+            <span className="px-1.5 py-0.5 border border-zinc-600/50 text-[10px] font-semibold text-zinc-400">
+              {t.compareHome.oldLabel}
+            </span>
+            <span className="font-semibold">{result.oldModel.metadata.fileName}</span>
+            <span className="text-zinc-500 tabular-nums">
+              ({formatBytes(result.oldModel.metadata.fileSize)})
+            </span>
+            <span className="text-zinc-500 px-1">→</span>
+            <span className="px-1.5 py-0.5 border border-zinc-500/60 text-[10px] font-semibold text-zinc-300">
+              {t.compareHome.newLabel}
+            </span>
+            <span className="font-semibold">{result.newModel.metadata.fileName}</span>
+            <span className="text-zinc-500 tabular-nums">
+              ({formatBytes(result.newModel.metadata.fileSize)})
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Utilitarian Action Strip */}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onSwapFiles}
-              title="Swap Old and New FMB files"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
-                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border transition-colors whitespace-nowrap ${btnClass}`}
             >
               <ArrowLeftRight className="w-3.5 h-3.5" />
-              Swap Old / New
+              {t.toolbar.swapSides}
             </button>
             <button
               type="button"
               onClick={onRerun}
-              title="Re-run comparison (Ctrl+R)"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
-                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border transition-colors whitespace-nowrap ${btnClass}`}
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Re-run
+              {t.toolbar.rerun}
             </button>
             <button
               type="button"
               onClick={onResetFiles}
-              title="Select different FMB files (Ctrl+O)"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
-                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border transition-colors whitespace-nowrap ${btnClass}`}
             >
               <FolderOpen className="w-3.5 h-3.5" />
-              Select files
+              {t.toolbar.openFiles}
             </button>
             <button
               type="button"
               onClick={onPreviewHtmlReport}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
-                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border transition-colors whitespace-nowrap ${btnClass}`}
             >
               <FileCode className="w-3.5 h-3.5" />
-              View Report
+              {t.toolbar.viewReport}
             </button>
             <button
               type="button"
               onClick={onExportHtmlReport}
-              title="Export self-contained HTML comparison report (Ctrl+S)"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors whitespace-nowrap"
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold border transition-colors whitespace-nowrap ${
+                isDark
+                  ? 'border-zinc-400 bg-zinc-100 text-zinc-950 hover:bg-white'
+                  : 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800'
+              }`}
             >
               <Download className="w-3.5 h-3.5" />
-              Export Report
+              {t.toolbar.exportReport}
             </button>
           </div>
         </div>
 
-        {/* Summary Metric Bar — visible immediately without scrolling */}
+        {/* Immediate Summary Counters Bar */}
         <div
-          className={`mt-3 pt-3 border-t flex flex-wrap items-center justify-between gap-4 ${
-            isDark ? 'border-slate-800/80' : 'border-slate-200'
+          className={`mt-2 pt-2 border-t flex flex-wrap items-center justify-between gap-4 ${
+            isDark ? 'border-[#2b2d32]' : 'border-zinc-300'
           }`}
         >
-          <div className="flex flex-wrap items-center gap-6 text-sm tabular-nums">
+          <div className="flex flex-wrap items-center gap-5 text-xs tabular-nums">
             <button
               type="button"
               onClick={() =>
                 setStatusFilter(statusFilter === 'ADDED' ? 'CHANGES_ONLY' : 'ADDED')
               }
-              className={`flex items-center gap-2 transition-opacity ${
+              className={`flex items-center gap-1.5 transition-opacity ${
                 statusFilter !== 'ALL' &&
                 statusFilter !== 'CHANGES_ONLY' &&
                 statusFilter !== 'ADDED'
-                  ? 'opacity-45 hover:opacity-100'
+                  ? 'opacity-40 hover:opacity-100'
                   : ''
               }`}
             >
               <span
-                className={`font-mono font-bold text-base ${
-                  isDark ? 'text-emerald-400' : 'text-emerald-600'
+                className={`font-mono font-bold text-sm ${
+                  isDark ? 'text-emerald-400' : 'text-emerald-700'
                 }`}
               >
                 +{result.summary.added}
               </span>
-              <span className={isDark ? 'text-slate-300' : 'text-slate-700'}>
-                Added
-              </span>
+              <span className="font-medium">{t.summary.added}</span>
             </button>
 
             <button
@@ -418,24 +393,22 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
               onClick={() =>
                 setStatusFilter(statusFilter === 'REMOVED' ? 'CHANGES_ONLY' : 'REMOVED')
               }
-              className={`flex items-center gap-2 transition-opacity ${
+              className={`flex items-center gap-1.5 transition-opacity ${
                 statusFilter !== 'ALL' &&
                 statusFilter !== 'CHANGES_ONLY' &&
                 statusFilter !== 'REMOVED'
-                  ? 'opacity-45 hover:opacity-100'
+                  ? 'opacity-40 hover:opacity-100'
                   : ''
               }`}
             >
               <span
-                className={`font-mono font-bold text-base ${
-                  isDark ? 'text-rose-400' : 'text-rose-600'
+                className={`font-mono font-bold text-sm ${
+                  isDark ? 'text-rose-400' : 'text-rose-700'
                 }`}
               >
                 −{result.summary.removed}
               </span>
-              <span className={isDark ? 'text-slate-300' : 'text-slate-700'}>
-                Removed
-              </span>
+              <span className="font-medium">{t.summary.removed}</span>
             </button>
 
             <button
@@ -445,24 +418,22 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                   statusFilter === 'MODIFIED' ? 'CHANGES_ONLY' : 'MODIFIED'
                 )
               }
-              className={`flex items-center gap-2 transition-opacity ${
+              className={`flex items-center gap-1.5 transition-opacity ${
                 statusFilter !== 'ALL' &&
                 statusFilter !== 'CHANGES_ONLY' &&
                 statusFilter !== 'MODIFIED'
-                  ? 'opacity-45 hover:opacity-100'
+                  ? 'opacity-40 hover:opacity-100'
                   : ''
               }`}
             >
               <span
-                className={`font-mono font-bold text-base ${
-                  isDark ? 'text-amber-400' : 'text-amber-600'
+                className={`font-mono font-bold text-sm ${
+                  isDark ? 'text-amber-400' : 'text-amber-700'
                 }`}
               >
                 ● {result.summary.modified}
               </span>
-              <span className={isDark ? 'text-slate-300' : 'text-slate-700'}>
-                Modified
-              </span>
+              <span className="font-medium">{t.summary.modified}</span>
             </button>
 
             <button
@@ -470,48 +441,48 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
               onClick={() =>
                 setStatusFilter(statusFilter === 'ALL' ? 'CHANGES_ONLY' : 'ALL')
               }
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors"
+              className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors"
             >
-              <span className="font-mono font-semibold text-base tabular-nums">
+              <span className="font-mono font-semibold text-sm tabular-nums">
                 ✓ {result.summary.unchanged}
               </span>
-              <span>Same</span>
+              <span>{t.summary.same}</span>
             </button>
           </div>
 
-          <div className="text-xs text-slate-500 tabular-nums">
-            {result.summary.changedPropertyTotal} property changes ·{' '}
-            {result.summary.changedTriggersCount} triggers ·{' '}
-            {result.summary.changedProgramUnitsCount} program units modified
+          <div className="text-[11px] font-mono text-zinc-500 tabular-nums">
+            {result.summary.changedPropertyTotal} {t.summary.propertyChanges} ·{' '}
+            {result.summary.changedTriggersCount} {t.summary.triggersModified} ·{' '}
+            {result.summary.changedProgramUnitsCount} {t.summary.programUnitsModified}
           </div>
         </div>
       </div>
 
-      {/* Search & Instant Filter Bar */}
+      {/* Utilitarian Filter & Search Bar */}
       <div
-        className={`px-6 py-2.5 border-b flex flex-wrap items-center justify-between gap-3 ${
-          isDark ? 'border-slate-800 bg-slate-950/60' : 'border-slate-200 bg-slate-50'
+        className={`px-4 py-1.5 border-b flex flex-wrap items-center justify-between gap-2 ${
+          isDark ? 'border-[#2b2d32] bg-[#18191c]' : 'border-zinc-300 bg-zinc-50'
         }`}
       >
-        <div className="relative flex-1 min-w-[240px] max-w-md">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search differences by object, property, or PL/SQL... (Ctrl+F)"
-            className={`w-full pl-9 pr-8 py-1.5 text-xs rounded border outline-none transition-colors ${
+            placeholder={t.filters.searchPlaceholder}
+            className={`w-full pl-8 pr-7 py-1 text-xs font-mono border outline-none transition-colors ${
               isDark
-                ? 'bg-slate-900 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500'
-                : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-600'
+                ? 'bg-[#121316] border-[#2e3036] text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-400'
+                : 'bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-600'
             }`}
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-200"
             >
               ×
             </button>
@@ -519,35 +490,32 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Segmented status filter */}
           <div
-            className={`flex items-center gap-0.5 p-0.5 rounded border ${
-              isDark
-                ? 'bg-slate-900 border-slate-800'
-                : 'bg-slate-200/70 border-slate-300/80'
+            className={`flex items-center border ${
+              isDark ? 'border-[#2e3036] bg-[#121316]' : 'border-zinc-300 bg-zinc-200/60'
             }`}
           >
             {(
               [
-                ['CHANGES_ONLY', 'Only changes'],
-                ['ADDED', 'Added'],
-                ['REMOVED', 'Removed'],
-                ['MODIFIED', 'Modified'],
-                ['ALL', 'Show unchanged'],
+                ['CHANGES_ONLY', t.filters.onlyChanges],
+                ['ADDED', t.summary.added],
+                ['REMOVED', t.summary.removed],
+                ['MODIFIED', t.summary.modified],
+                ['ALL', t.filters.showUnchanged],
               ] as const
             ).map(([val, label]) => (
               <button
                 key={val}
                 type="button"
                 onClick={() => setStatusFilter(val)}
-                className={`px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap ${
+                className={`px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap ${
                   statusFilter === val
                     ? isDark
-                      ? 'bg-slate-800 text-white shadow-2xs'
-                      : 'bg-white text-slate-900 shadow-2xs'
+                      ? 'bg-[#2b2d34] text-white font-semibold'
+                      : 'bg-white text-zinc-950 font-semibold shadow-2xs'
                     : isDark
-                    ? 'text-slate-400 hover:text-slate-200'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'text-zinc-400 hover:text-zinc-200'
+                    : 'text-zinc-600 hover:text-zinc-900'
                 }`}
               >
                 {label}
@@ -555,20 +523,19 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
             ))}
           </div>
 
-          {/* Object Type Dropdown Filter */}
           <div className="relative flex items-center">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 pointer-events-none" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 pointer-events-none" />
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-              aria-label="Filter by Oracle Forms object type"
-              className={`pl-8 pr-7 py-1 text-xs font-medium rounded border outline-none cursor-pointer ${
+              aria-label={t.filters.allTypes}
+              className={`pl-7 pr-6 py-1 text-xs font-medium border outline-none cursor-pointer ${
                 isDark
-                  ? 'bg-slate-900 border-slate-800 text-slate-200 focus:border-blue-500'
-                  : 'bg-white border-slate-300 text-slate-800 focus:border-blue-600'
+                  ? 'bg-[#121316] border-[#2e3036] text-zinc-200'
+                  : 'bg-white border-zinc-300 text-zinc-800'
               }`}
             >
-              {OBJECT_TYPE_LABELS.map((opt) => (
+              {objectTypeOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -578,53 +545,56 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
         </div>
       </div>
 
-      {/* Main Split Workspace: Left Object Navigation Tree + Right Progressive Disclosure Diff List */}
+      {/* Main Split Dock: Left Object Tree + Right Diff Table */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Left Sidebar: Hierarchical Object Tree */}
+        {/* Left Dock: Object Hierarchy Navigator */}
         <aside
-          className={`w-64 shrink-0 border-r overflow-y-auto p-3 select-none ${
-            isDark ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-slate-50/70'
+          className={`w-60 shrink-0 border-r overflow-y-auto p-2 select-none ${
+            isDark ? 'border-[#2b2d32] bg-[#18191c]' : 'border-zinc-300 bg-zinc-100/80'
           }`}
         >
-          <div className="flex items-center justify-between px-2 mb-2">
-            <span className="text-xs font-semibold tracking-tight text-slate-400">
-              Object Hierarchy
+          <div className="flex items-center justify-between px-2 py-1 mb-1">
+            <span className="text-[11px] font-mono font-semibold text-zinc-400">
+              {t.tree.objectHierarchy}
             </span>
             {selectedTreeNode !== 'ALL' && (
               <button
                 type="button"
                 onClick={() => setSelectedTreeNode('ALL')}
-                className="text-[11px] text-blue-400 hover:underline"
+                className="text-[11px] font-mono text-zinc-300 underline"
               >
-                Show all
+                {t.tree.showAll}
               </button>
             )}
           </div>
 
-          {/* Root Form Node */}
+          {/* Root Module Node */}
           <button
             type="button"
             onClick={() => setSelectedTreeNode('ALL')}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold mb-1 transition-colors ${
+            className={`w-full flex items-center justify-between px-2 py-1 text-xs font-mono font-semibold mb-0.5 transition-colors ${
               selectedTreeNode === 'ALL'
                 ? isDark
-                  ? 'bg-blue-500/15 text-blue-300'
-                  : 'bg-blue-50 text-blue-700'
+                  ? 'bg-[#2b2d34] text-white'
+                  : 'bg-zinc-300/80 text-zinc-950'
                 : isDark
-                ? 'text-slate-200 hover:bg-slate-800/60'
-                : 'text-slate-800 hover:bg-slate-200/60'
+                ? 'text-zinc-300 hover:bg-[#22242a]'
+                : 'text-zinc-800 hover:bg-zinc-200/70'
             }`}
           >
-            <span className="font-mono truncate">{result.newModel.metadata.moduleName}</span>
-            <span className="text-[11px] font-mono text-slate-500 tabular-nums">
+            <span className="truncate">{result.newModel.metadata.moduleName}</span>
+            <span className="text-[11px] text-zinc-400 tabular-nums">
               {totalChanges}
             </span>
           </button>
 
-          <div className="pl-2 border-l border-slate-800/70 ml-2.5 space-y-0.5 text-xs">
-            {/* Windows */}
+          <div
+            className={`pl-2 border-l ml-2 space-y-0.5 text-xs ${
+              isDark ? 'border-[#2e3036]' : 'border-zinc-300'
+            }`}
+          >
             <TreeCategoryButton
-              label="Windows"
+              label={t.tree.windows}
               nodeKey="CATEGORY:WINDOW"
               selectedNode={selectedTreeNode}
               onSelect={setSelectedTreeNode}
@@ -632,9 +602,8 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
               isDark={isDark}
             />
 
-            {/* Canvases */}
             <TreeCategoryButton
-              label="Canvases"
+              label={t.tree.canvases}
               nodeKey="CATEGORY:CANVAS"
               selectedNode={selectedTreeNode}
               onSelect={setSelectedTreeNode}
@@ -642,12 +611,15 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
               isDark={isDark}
             />
 
-            {/* Blocks */}
-            <div className="pt-1">
-              <div className="px-2 py-1 text-[11px] font-medium text-slate-500">
-                Blocks
+            <div className="pt-0.5">
+              <div className="px-2 py-0.5 text-[11px] font-mono text-zinc-500">
+                {t.tree.blocks}
               </div>
-              <div className="pl-2 border-l border-slate-800/60 ml-2 space-y-0.5">
+              <div
+                className={`pl-2 border-l ml-2 space-y-0.5 ${
+                  isDark ? 'border-[#2e3036]' : 'border-zinc-300'
+                }`}
+              >
                 {treeSummary.blocks.map((blk) => {
                   const isActive = selectedTreeNode === blk.nodeKey;
                   const indicator = blk.stats.allAdded ? (
@@ -663,20 +635,20 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                       onClick={() =>
                         setSelectedTreeNode(isActive ? 'ALL' : blk.nodeKey)
                       }
-                      className={`w-full flex items-center justify-between px-2 py-1.5 rounded text-xs font-mono transition-colors ${
+                      className={`w-full flex items-center justify-between px-2 py-1 text-xs font-mono transition-colors ${
                         isActive
                           ? isDark
-                            ? 'bg-blue-500/15 text-blue-300 font-semibold'
-                            : 'bg-blue-50 text-blue-700 font-semibold'
+                            ? 'bg-[#2b2d34] text-white font-semibold'
+                            : 'bg-zinc-300 text-zinc-950 font-semibold'
                           : isDark
-                          ? 'text-slate-300 hover:bg-slate-800/60'
-                          : 'text-slate-700 hover:bg-slate-200/60'
+                          ? 'text-zinc-300 hover:bg-[#22242a]'
+                          : 'text-zinc-700 hover:bg-zinc-200/70'
                       }`}
                     >
                       <span className="truncate">{blk.name}</span>
                       <span className="flex items-center gap-1.5">
                         {blk.stats.changedCount > 0 && (
-                          <span className="text-[11px] text-slate-500 tabular-nums">
+                          <span className="text-[11px] text-zinc-500 tabular-nums">
                             {blk.stats.changedCount}
                           </span>
                         )}
@@ -688,31 +660,28 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
               </div>
             </div>
 
-            {/* Triggers */}
             <TreeCategoryButton
-              label="Triggers"
+              label={t.tree.triggers}
               nodeKey="CATEGORY:TRIGGER"
               selectedNode={selectedTreeNode}
               onSelect={setSelectedTreeNode}
               changedCount={treeSummary.triggers.changedCount}
-              badgeSuffix="changes"
+              badgeSuffix={t.tree.changesCount}
               isDark={isDark}
             />
 
-            {/* Program Units */}
             <TreeCategoryButton
-              label="Program Units"
+              label={t.tree.programUnits}
               nodeKey="CATEGORY:PROGRAM_UNIT"
               selectedNode={selectedTreeNode}
               onSelect={setSelectedTreeNode}
               changedCount={treeSummary.programUnits.changedCount}
-              badgeSuffix="changes"
+              badgeSuffix={t.tree.changesCount}
               isDark={isDark}
             />
 
-            {/* LOVs */}
             <TreeCategoryButton
-              label="LOVs"
+              label={t.tree.lovs}
               nodeKey="CATEGORY:LOV"
               selectedNode={selectedTreeNode}
               onSelect={setSelectedTreeNode}
@@ -720,9 +689,8 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
               isDark={isDark}
             />
 
-            {/* Record Groups */}
             <TreeCategoryButton
-              label="Record Groups"
+              label={t.tree.recordGroups}
               nodeKey="CATEGORY:RECORD_GROUP"
               selectedNode={selectedTreeNode}
               onSelect={setSelectedTreeNode}
@@ -733,48 +701,43 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
         </aside>
 
         {/* Right Main Diff Viewport */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4">
           {totalChanges === 0 && statusFilter === 'CHANGES_ONLY' ? (
-            /* Empty State: Identical FMB files */
             <div
-              className={`max-w-lg mx-auto my-16 p-8 rounded-lg border text-center ${
+              className={`max-w-md mx-auto my-12 p-6 border text-center ${
                 isDark
-                  ? 'border-slate-800 bg-slate-900/50'
-                  : 'border-slate-200 bg-white'
+                  ? 'border-[#2e3036] bg-[#18191c]'
+                  : 'border-zinc-300 bg-white'
               }`}
             >
-              <div className="text-emerald-400 font-mono text-2xl mb-2">✓</div>
-              <h2 className="text-base font-semibold mb-1">No differences</h2>
-              <p className="text-xs text-slate-400 mb-5">
-                The two FMB files contain the same normalized structure ({result.summary.unchanged}{' '}
-                objects verified).
+              <div className="text-emerald-400 font-mono text-xl mb-1">✓</div>
+              <h2 className="text-sm font-semibold mb-1">
+                {t.diffView.noDifferencesTitle}
+              </h2>
+              <p className="text-xs text-zinc-400 mb-4">
+                {t.diffView.noDifferencesDesc} ({result.summary.unchanged})
               </p>
               <button
                 type="button"
                 onClick={() => setStatusFilter('ALL')}
-                className={`px-3.5 py-1.5 text-xs font-medium rounded border transition-colors ${
-                  isDark
-                    ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                    : 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200'
-                }`}
+                className={`px-3 py-1.5 text-xs font-medium border transition-colors ${btnClass}`}
               >
-                Inspect {result.summary.unchanged} unchanged objects
+                {t.diffView.inspectUnchangedBtn} ({result.summary.unchanged})
               </button>
             </div>
           ) : groupedSections.length === 0 ? (
-            /* Empty State: No matches for active search/filter */
             <div
-              className={`max-w-lg mx-auto my-16 p-8 rounded-lg border text-center ${
+              className={`max-w-md mx-auto my-12 p-6 border text-center ${
                 isDark
-                  ? 'border-slate-800 bg-slate-900/50'
-                  : 'border-slate-200 bg-white'
+                  ? 'border-[#2e3036] bg-[#18191c]'
+                  : 'border-zinc-300 bg-white'
               }`}
             >
               <h2 className="text-sm font-semibold mb-1">
-                No differences match your current filter
+                {t.diffView.noFilterMatchesTitle}
               </h2>
-              <p className="text-xs text-slate-400 mb-4">
-                Try clearing the search query or switching to all object types.
+              <p className="text-xs text-zinc-400 mb-4">
+                {t.diffView.noFilterMatchesDesc}
               </p>
               <button
                 type="button"
@@ -784,56 +747,57 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                   setTypeFilter('ALL');
                   setSelectedTreeNode('ALL');
                 }}
-                className="px-3.5 py-1.5 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors"
+                className={`px-3 py-1.5 text-xs font-medium border transition-colors ${btnClass}`}
               >
-                Reset filters
+                {t.filters.resetFilters}
               </button>
             </div>
           ) : (
-            <div className="space-y-6 max-w-5xl">
+            <div className="space-y-4">
               {groupedSections.map((group) => {
                 const isCollapsed = Boolean(collapsedGroups[group.key]);
 
                 return (
                   <section
                     key={group.key}
-                    className={`rounded-lg border overflow-hidden ${
+                    className={`border ${
                       isDark
-                        ? 'border-slate-800 bg-slate-900/40'
-                        : 'border-slate-200 bg-white'
+                        ? 'border-[#2e3036] bg-[#16171a]'
+                        : 'border-zinc-300 bg-white'
                     }`}
                   >
-                    {/* Section Group Header (e.g. ▼ CUSTOMER, ▼ TRIGGERS) */}
+                    {/* Section Group Header (▼ CUSTOMER, ▼ TRIGGERS) */}
                     <button
                       type="button"
                       onClick={() => toggleGroup(group.key)}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 text-left border-b transition-colors ${
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left border-b transition-colors ${
                         isDark
-                          ? 'border-slate-800/80 bg-slate-900/90 hover:bg-slate-800/70'
-                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100/80'
+                          ? 'border-[#2e3036] bg-[#1e1f23] hover:bg-[#25272c]'
+                          : 'border-zinc-200 bg-zinc-100 hover:bg-zinc-200/70'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         {isCollapsed ? (
-                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                          <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                          <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
                         )}
-                        <span className="font-mono text-xs font-bold tracking-wide">
+                        <span className="font-mono text-xs font-bold">
                           {group.label}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-500 tabular-nums">
+                      <span className="text-[11px] font-mono text-zinc-500 tabular-nums">
                         {group.items.length}{' '}
-                        {group.items.length === 1 ? 'object' : 'objects'}
+                        {group.items.length === 1
+                          ? t.diffView.objectSingle
+                          : t.diffView.objectsCount}
                       </span>
                     </button>
 
-                    {/* Progressive Disclosure Object Rows */}
                     {!isCollapsed && (
                       <div
                         className={`divide-y ${
-                          isDark ? 'divide-slate-800/70' : 'divide-slate-200'
+                          isDark ? 'divide-[#26282d]' : 'divide-zinc-200'
                         }`}
                       >
                         {group.items.map((obj) => {
@@ -849,10 +813,9 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                             <div
                               key={obj.id}
                               className={`transition-colors ${
-                                isDark ? 'hover:bg-slate-900/60' : 'hover:bg-slate-50/70'
+                                isDark ? 'hover:bg-[#1c1d21]' : 'hover:bg-zinc-50'
                               }`}
                             >
-                              {/* Summary Row */}
                               <div
                                 onClick={() => toggleObjectExpand(obj.id)}
                                 role="button"
@@ -863,19 +826,19 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                     toggleObjectExpand(obj.id);
                                   }
                                 }}
-                                className="px-4 py-3 cursor-pointer select-none"
+                                className="px-3.5 py-2.5 cursor-pointer select-none"
                               >
                                 <div className="flex items-center justify-between gap-4">
-                                  <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="flex items-center gap-2 min-w-0">
                                     <span
-                                      className={`font-mono text-sm font-bold ${
+                                      className={`font-mono text-xs font-bold w-4 text-center ${
                                         obj.status === 'ADDED'
                                           ? 'text-emerald-400'
                                           : obj.status === 'REMOVED'
                                           ? 'text-rose-400'
                                           : obj.status === 'MODIFIED'
                                           ? 'text-amber-400'
-                                          : 'text-slate-500'
+                                          : 'text-zinc-500'
                                       }`}
                                     >
                                       {obj.status === 'ADDED'
@@ -886,44 +849,44 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                         ? '●'
                                         : '✓'}
                                     </span>
-                                    <span className="font-mono text-sm font-semibold truncate">
+                                    <span className="font-mono text-xs font-semibold truncate">
                                       {obj.displayPath}
                                     </span>
-                                    <span className="text-xs text-slate-500">
+                                    <span className="text-[11px] font-mono text-zinc-500">
                                       · {obj.type}
                                     </span>
                                   </div>
 
-                                  <div className="flex items-center gap-3 shrink-0">
+                                  <div className="flex items-center gap-2.5 shrink-0">
                                     {renderStatusIndicator(obj.status)}
                                     {isExpanded ? (
-                                      <ChevronDown className="w-4 h-4 text-slate-500" />
+                                      <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
                                     ) : (
-                                      <ChevronRight className="w-4 h-4 text-slate-500" />
+                                      <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
                                     )}
                                   </div>
                                 </div>
 
-                                {/* Immediate Inline Property Diffs (Progressive Disclosure Level 2) */}
+                                {/* Progressive Disclosure Level 2: Direct Property Diffs */}
                                 {obj.status === 'MODIFIED' && changedProps.length > 0 && (
-                                  <div className="mt-2 pl-5 space-y-1">
+                                  <div className="mt-1.5 pl-6 space-y-0.5">
                                     {changedProps.map((prop) => (
                                       <div
                                         key={prop.key}
-                                        className="grid grid-cols-[160px_1fr] items-baseline gap-2 text-xs"
+                                        className="grid grid-cols-[150px_1fr] items-baseline gap-2 text-xs font-mono"
                                       >
-                                        <span className="text-slate-400 font-medium">
+                                        <span className="text-zinc-400 font-sans">
                                           {prop.label}
                                         </span>
-                                        <div className="font-mono flex flex-wrap items-center gap-2">
+                                        <div className="flex flex-wrap items-center gap-2">
                                           <span
                                             className={
-                                              isDark ? 'text-slate-400' : 'text-slate-600'
+                                              isDark ? 'text-zinc-400' : 'text-zinc-600'
                                             }
                                           >
                                             {prop.oldFormatted}
                                           </span>
-                                          <span className="text-slate-500">→</span>
+                                          <span className="text-zinc-500">→</span>
                                           <span
                                             className={`font-semibold ${
                                               isDark ? 'text-amber-300' : 'text-amber-800'
@@ -937,11 +900,11 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                   </div>
                                 )}
 
-                                {/* Immediate Inline Source Diff Summary for Triggers / Program Units */}
+                                {/* Source Diff Summary */}
                                 {hasSourceChanges && obj.sourceDiff && (
-                                  <div className="mt-2 pl-5 flex items-center gap-3 text-xs font-mono">
-                                    <span className="text-slate-400">
-                                      {obj.sourceDiff.sourceType} Source:
+                                  <div className="mt-1.5 pl-6 flex flex-wrap items-center gap-3 text-xs font-mono">
+                                    <span className="text-zinc-400">
+                                      {obj.sourceDiff.sourceType}:
                                     </span>
                                     {obj.sourceDiff.addedLines > 0 && (
                                       <span
@@ -949,11 +912,8 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                           isDark ? 'text-emerald-400' : 'text-emerald-700'
                                         }
                                       >
-                                        {obj.sourceDiff.addedLines}{' '}
-                                        {obj.sourceDiff.addedLines === 1
-                                          ? 'line'
-                                          : 'lines'}{' '}
-                                        added
+                                        +{obj.sourceDiff.addedLines}{' '}
+                                        {t.diffView.linesAdded}
                                       </span>
                                     )}
                                     {obj.sourceDiff.removedLines > 0 && (
@@ -962,11 +922,8 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                           isDark ? 'text-rose-400' : 'text-rose-700'
                                         }
                                       >
-                                        {obj.sourceDiff.removedLines}{' '}
-                                        {obj.sourceDiff.removedLines === 1
-                                          ? 'line'
-                                          : 'lines'}{' '}
-                                        removed
+                                        −{obj.sourceDiff.removedLines}{' '}
+                                        {t.diffView.linesRemoved}
                                       </span>
                                     )}
                                     {obj.sourceDiff.modifiedLines > 0 && (
@@ -975,24 +932,20 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                           isDark ? 'text-amber-400' : 'text-amber-700'
                                         }
                                       >
-                                        {obj.sourceDiff.modifiedLines}{' '}
-                                        {obj.sourceDiff.modifiedLines === 1
-                                          ? 'line'
-                                          : 'lines'}{' '}
-                                        modified
+                                        ~{obj.sourceDiff.modifiedLines}{' '}
+                                        {t.diffView.linesModified}
                                       </span>
                                     )}
-                                    <span className="text-blue-400 text-[11px] font-sans">
+                                    <span className="text-zinc-400 underline text-[11px] font-sans">
                                       {isExpanded
-                                        ? 'Hide split diff'
-                                        : 'Click to inspect split diff'}
+                                        ? t.diffView.hideSplitDiff
+                                        : t.diffView.inspectSplitDiff}
                                     </span>
                                   </div>
                                 )}
 
-                                {/* Brief summary for Added / Removed objects */}
                                 {(obj.status === 'ADDED' || obj.status === 'REMOVED') && (
-                                  <div className="mt-1.5 pl-5 text-xs text-slate-400 font-mono">
+                                  <div className="mt-1 pl-6 text-xs text-zinc-400 font-mono">
                                     {obj.propertyDiffs
                                       .slice(0, 4)
                                       .map(
@@ -1008,16 +961,15 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                 )}
                               </div>
 
-                              {/* Expanded Detail Drawer (Progressive Disclosure Level 3) */}
+                              {/* Progressive Disclosure Level 3: Expanded Split Diff & Full Property Grid */}
                               {isExpanded && (
                                 <div
-                                  className={`px-4 pb-4 pt-2 pl-9 border-t text-xs ${
+                                  className={`px-4 pb-3.5 pt-2 pl-9 border-t text-xs ${
                                     isDark
-                                      ? 'border-slate-800/60 bg-slate-950/50'
-                                      : 'border-slate-100 bg-slate-50/60'
+                                      ? 'border-[#26282d] bg-[#121316]'
+                                      : 'border-zinc-200 bg-zinc-50'
                                   }`}
                                 >
-                                  {/* Split View for Trigger / Program Unit / Record Group SQL */}
                                   {obj.sourceDiff && (
                                     <SplitSourceDiff
                                       diff={obj.sourceDiff}
@@ -1025,12 +977,11 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                     />
                                   )}
 
-                                  {/* Full Property Table */}
                                   {obj.propertyDiffs.length > 0 && (
                                     <div className="mt-3">
                                       <div className="flex items-center justify-between mb-1.5">
-                                        <span className="font-semibold text-slate-400">
-                                          Object Properties ({obj.propertyDiffs.length})
+                                        <span className="font-mono font-semibold text-zinc-400">
+                                          {t.diffView.objectProperties} ({obj.propertyDiffs.length})
                                         </span>
                                         <button
                                           type="button"
@@ -1040,18 +991,18 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                               [obj.id]: !prev[obj.id],
                                             }))
                                           }
-                                          className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-300"
+                                          className="inline-flex items-center gap-1 text-[11px] font-mono text-zinc-500 hover:text-zinc-300"
                                         >
                                           <Code2 className="w-3 h-3" />
                                           {showDevJson
-                                            ? 'Hide normalized JSON'
-                                            : 'Developer normalized view'}
+                                            ? t.diffView.hideNormalizedView
+                                            : t.diffView.devNormalizedView}
                                         </button>
                                       </div>
 
                                       <div
-                                        className={`rounded border overflow-hidden ${
-                                          isDark ? 'border-slate-800' : 'border-slate-200'
+                                        className={`border overflow-hidden ${
+                                          isDark ? 'border-[#2e3036]' : 'border-zinc-300'
                                         }`}
                                       >
                                         <table className="w-full text-left border-collapse">
@@ -1059,29 +1010,29 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                             <tr
                                               className={
                                                 isDark
-                                                  ? 'bg-slate-900/90 text-slate-400 border-b border-slate-800'
-                                                  : 'bg-slate-100 text-slate-600 border-b border-slate-200'
+                                                  ? 'bg-[#1e1f23] text-zinc-400 border-b border-[#2e3036]'
+                                                  : 'bg-zinc-100 text-zinc-600 border-b border-zinc-300'
                                               }
                                             >
-                                              <th className="py-1.5 px-3 font-medium">
-                                                Property
+                                              <th className="py-1 px-2.5 font-medium">
+                                                {t.diffView.colProperty}
                                               </th>
-                                              <th className="py-1.5 px-3 font-medium">
-                                                OLD ({result.oldModel.metadata.fileName})
+                                              <th className="py-1 px-2.5 font-medium">
+                                                {t.diffView.colOld} ({result.oldModel.metadata.fileName})
                                               </th>
-                                              <th className="py-1.5 px-3 font-medium">
-                                                NEW ({result.newModel.metadata.fileName})
+                                              <th className="py-1 px-2.5 font-medium">
+                                                {t.diffView.colNew} ({result.newModel.metadata.fileName})
                                               </th>
-                                              <th className="py-1.5 px-3 font-medium text-right">
-                                                State
+                                              <th className="py-1 px-2.5 font-medium text-right">
+                                                {t.diffView.colState}
                                               </th>
                                             </tr>
                                           </thead>
                                           <tbody
                                             className={`divide-y font-mono ${
                                               isDark
-                                                ? 'divide-slate-800/60'
-                                                : 'divide-slate-200'
+                                                ? 'divide-[#26282d]'
+                                                : 'divide-zinc-200'
                                             }`}
                                           >
                                             {obj.propertyDiffs.map((p) => {
@@ -1092,25 +1043,25 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                                   className={
                                                     isChanged
                                                       ? isDark
-                                                        ? 'bg-amber-950/15'
-                                                        : 'bg-amber-50/60'
-                                                      : 'opacity-70'
+                                                        ? 'bg-[#2c2416]'
+                                                        : 'bg-amber-50/80'
+                                                      : 'opacity-65'
                                                   }
                                                 >
-                                                  <td className="py-1.5 px-3 font-sans font-medium">
+                                                  <td className="py-1 px-2.5 font-sans font-medium">
                                                     {p.label}
                                                   </td>
-                                                  <td className="py-1.5 px-3">
+                                                  <td className="py-1 px-2.5">
                                                     {p.oldFormatted}
                                                   </td>
                                                   <td
-                                                    className={`py-1.5 px-3 ${
+                                                    className={`py-1 px-2.5 ${
                                                       isChanged ? 'font-semibold' : ''
                                                     }`}
                                                   >
                                                     {p.newFormatted}
                                                   </td>
-                                                  <td className="py-1.5 px-3 text-right">
+                                                  <td className="py-1 px-2.5 text-right">
                                                     {p.status}
                                                   </td>
                                                 </tr>
@@ -1122,13 +1073,13 @@ export const CompareWorkspace: React.FC<CompareWorkspaceProps> = ({
                                     </div>
                                   )}
 
-                                  {/* Optional Developer / Debug Normalized JSON View */}
                                   {showDevJson && (
                                     <pre
-                                      className={`mt-2 p-3 rounded border font-mono text-[11px] overflow-x-auto ${
+                                      dir="ltr"
+                                      className={`mt-2 p-2.5 border font-mono text-[11px] overflow-x-auto ${
                                         isDark
-                                          ? 'bg-slate-950 border-slate-800 text-slate-300'
-                                          : 'bg-slate-900 border-slate-300 text-slate-100'
+                                          ? 'bg-[#0e0f11] border-[#2e3036] text-zinc-300'
+                                          : 'bg-zinc-900 border-zinc-400 text-zinc-100'
                                       }`}
                                     >
                                       {JSON.stringify(
@@ -1184,14 +1135,14 @@ const TreeCategoryButton: React.FC<TreeCategoryButtonProps> = ({
     <button
       type="button"
       onClick={() => onSelect(isActive ? 'ALL' : nodeKey)}
-      className={`w-full flex items-center justify-between px-2 py-1.5 rounded text-xs transition-colors ${
+      className={`w-full flex items-center justify-between px-2 py-1 text-xs transition-colors ${
         isActive
           ? isDark
-            ? 'bg-blue-500/15 text-blue-300 font-semibold'
-            : 'bg-blue-50 text-blue-700 font-semibold'
+            ? 'bg-[#2b2d34] text-white font-semibold'
+            : 'bg-zinc-300 text-zinc-950 font-semibold'
           : isDark
-          ? 'text-slate-300 hover:bg-slate-800/60'
-          : 'text-slate-700 hover:bg-slate-200/60'
+          ? 'text-zinc-300 hover:bg-[#22242a]'
+          : 'text-zinc-700 hover:bg-zinc-200/70'
       }`}
     >
       <span className="truncate">{label}</span>
@@ -1200,7 +1151,7 @@ const TreeCategoryButton: React.FC<TreeCategoryButtonProps> = ({
           {badgeSuffix ? `${changedCount} ${badgeSuffix}` : `● ${changedCount}`}
         </span>
       ) : (
-        <span className="font-mono text-[11px] text-slate-600">✓</span>
+        <span className="font-mono text-[11px] text-zinc-600">✓</span>
       )}
     </button>
   );

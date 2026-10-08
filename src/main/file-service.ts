@@ -1,7 +1,7 @@
 /**
- * Secure Electron File & Oracle Forms Tooling Service
+ * Localhost HTTP File & Oracle Forms Tooling Service (Node.js + WebView2 Host)
+ * Communicates with the local Node.js backend over 127.0.0.1 HTTP endpoints.
  * Never executes FMB content, extracted PL/SQL, or Forms trigger code.
- * Invokes official Oracle Forms CLI utilities using strict argument arrays (never shell eval).
  */
 
 export interface OracleToolingConfig {
@@ -29,6 +29,27 @@ export class FileService {
 
   public static updateToolingConfig(partial: Partial<OracleToolingConfig>): OracleToolingConfig {
     this.config = { ...this.config, ...partial };
+    // Synchronize asynchronously with local Node.js HTTP server
+    void fetch('/api/tooling-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(this.config),
+    }).catch(() => {
+      // Offline / browser-only fallback keeps in-memory state
+    });
+    return { ...this.config };
+  }
+
+  public static async fetchToolingConfigFromServer(): Promise<OracleToolingConfig> {
+    try {
+      const res = await fetch('/api/tooling-config');
+      if (res.ok) {
+        const remote = (await res.json()) as OracleToolingConfig;
+        this.config = { ...this.config, ...remote };
+      }
+    } catch {
+      // Keep local config if server endpoint is unreachable
+    }
     return { ...this.config };
   }
 }
