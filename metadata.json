@@ -1,0 +1,6 @@
+{
+  "name": "FMB Diff & Merge Checker",
+  "description": "Lightweight desktop developer utility for comparing and 3-way merging Oracle Forms .fmb files with semantic diff visualization, conflict resolution, and offline HTML reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
